@@ -1,5 +1,6 @@
 package com.hotbell.radio.ui.radio
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -24,9 +26,10 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -53,6 +56,36 @@ import com.hotbell.radio.ui.theme.ElectricBlue
 import com.hotbell.radio.ui.theme.NeonRed
 import com.hotbell.radio.ui.theme.PitchBlack
 
+private val COUNTRY_FILTERS = listOf(
+    null to "All",
+    "ID" to "🇮🇩 Indonesia",
+    "US" to "🇺🇸 USA",
+    "GB" to "🇬🇧 UK",
+    "JP" to "🇯🇵 Japan",
+    "KR" to "🇰🇷 Korea",
+    "DE" to "🇩🇪 Germany",
+    "FR" to "🇫🇷 France",
+    "BR" to "🇧🇷 Brazil",
+    "AU" to "🇦🇺 Australia"
+)
+
+private val TAG_FILTERS = listOf(
+    null to "All",
+    "pop" to "Pop",
+    "rock" to "Rock",
+    "jazz" to "Jazz",
+    "classical" to "Classical",
+    "news" to "News",
+    "hiphop" to "Hip Hop",
+    "electronic" to "Electronic",
+    "reggae" to "Reggae",
+    "country" to "Country",
+    "metal" to "Metal",
+    "r&b" to "R&B",
+    "lounge" to "Lounge",
+    "ambient" to "Ambient"
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RadioExplorerScreen(
@@ -66,6 +99,8 @@ fun RadioExplorerScreen(
     val error by viewModel.errorMessage.collectAsState()
     val favorites by viewModel.favorites.collectAsState()
     val playbackState by viewModel.playbackState.collectAsState()
+    val selectedCountry by viewModel.selectedCountry.collectAsState()
+    val selectedTag by viewModel.selectedTag.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
 
     val favoriteUuids = favorites.map { it.stationUuid }.toSet()
@@ -117,7 +152,57 @@ fun RadioExplorerScreen(
                 singleLine = true
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Country filter chips
+            Text("Country", color = DarkGray, fontSize = 11.sp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                COUNTRY_FILTERS.forEach { (code, label) ->
+                    FilterChip(
+                        selected = selectedCountry == code,
+                        onClick = { viewModel.setCountryFilter(code) },
+                        label = { Text(label, fontSize = 11.sp) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = ElectricBlue.copy(alpha = 0.3f),
+                            selectedLabelColor = ElectricBlue,
+                            containerColor = DarkGray.copy(alpha = 0.15f),
+                            labelColor = DarkGray
+                        )
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Genre/Tag filter chips
+            Text("Genre", color = DarkGray, fontSize = 11.sp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                TAG_FILTERS.forEach { (tag, label) ->
+                    FilterChip(
+                        selected = selectedTag == tag,
+                        onClick = { viewModel.setTagFilter(tag) },
+                        label = { Text(label, fontSize = 11.sp) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = NeonRed.copy(alpha = 0.3f),
+                            selectedLabelColor = NeonRed,
+                            containerColor = DarkGray.copy(alpha = 0.15f),
+                            labelColor = DarkGray
+                        )
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Playing indicator
             if (playbackState is PlaybackState.Playing || playbackState is PlaybackState.Buffering) {
@@ -147,7 +232,7 @@ fun RadioExplorerScreen(
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
             }
 
             // Loading/Error
@@ -217,6 +302,10 @@ private fun StationCard(
                     }
                     station.countryCode?.let {
                         Text(text = it, color = DarkGray, fontSize = 11.sp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    if (station.bitrate > 0) {
+                        Text(text = "${station.bitrate}kbps", color = DarkGray, fontSize = 11.sp)
                     }
                 }
             }

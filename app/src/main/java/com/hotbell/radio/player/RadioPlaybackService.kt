@@ -1,21 +1,19 @@
 package com.hotbell.radio.player
 
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Intent
 import android.os.Build
 import android.util.Log
 import androidx.annotation.OptIn
-import androidx.core.app.NotificationCompat
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
-import com.hotbell.radio.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,7 +23,6 @@ class RadioPlaybackService : MediaSessionService() {
     companion object {
         private const val TAG = "RadioPlaybackService"
         private const val CHANNEL_ID = "hotbell_radio_channel"
-        private const val NOTIFICATION_ID = 1
 
         private val _playbackState = MutableStateFlow<PlaybackState>(PlaybackState.Idle)
         val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
@@ -105,15 +102,28 @@ class RadioPlaybackService : MediaSessionService() {
         _currentStationName = stationName
         _playbackState.value = PlaybackState.Buffering
 
+        // Build MediaItem with metadata so the system media notification shows station info
+        val mediaItem = MediaItem.Builder()
+            .setUri(url)
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(stationName)
+                    .setArtist("HotBell Radio")
+                    .setIsPlayable(true)
+                    .build()
+            )
+            .build()
+
         player?.apply {
             stop()
             clearMediaItems()
-            setMediaItem(MediaItem.fromUri(url))
+            setMediaItem(mediaItem)
             prepare()
             play()
         }
 
-        startForeground(NOTIFICATION_ID, buildNotification(stationName))
+        // Media3 MediaSessionService handles the foreground notification automatically
+        // when a MediaSession is active and playing. No need for manual startForeground.
     }
 
     private fun stopPlayback() {
@@ -121,17 +131,7 @@ class RadioPlaybackService : MediaSessionService() {
         player?.clearMediaItems()
         _playbackState.value = PlaybackState.Idle
         _currentStationName = ""
-        stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
-    }
-
-    private fun buildNotification(stationName: String): Notification {
-        return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("HotBell Radio")
-            .setContentText("Playing: $stationName")
-            .setSmallIcon(R.drawable.ic_radio)
-            .setOngoing(true)
-            .build()
     }
 
     private fun createNotificationChannel() {

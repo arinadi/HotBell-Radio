@@ -35,6 +35,16 @@ class RadioViewModel(application: Application) : AndroidViewModel(application) {
 
     val playbackState = RadioPlayerManager.playbackState
 
+    // Filter states
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    private val _selectedCountry = MutableStateFlow<String?>(null)
+    val selectedCountry: StateFlow<String?> = _selectedCountry.asStateFlow()
+
+    private val _selectedTag = MutableStateFlow<String?>(null)
+    val selectedTag: StateFlow<String?> = _selectedTag.asStateFlow()
+
     init {
         loadTopStations()
     }
@@ -53,16 +63,44 @@ class RadioViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+
+    fun setCountryFilter(country: String?) {
+        _selectedCountry.value = country
+        applyFilters()
+    }
+
+    fun setTagFilter(tag: String?) {
+        _selectedTag.value = tag
+        applyFilters()
+    }
+
     fun searchStations(query: String) {
-        if (query.isBlank()) {
+        _searchQuery.value = query
+        applyFilters()
+    }
+
+    private fun applyFilters() {
+        val query = _searchQuery.value
+        val country = _selectedCountry.value
+        val tag = _selectedTag.value
+
+        if (query.isBlank() && country == null && tag == null) {
             loadTopStations()
             return
         }
+
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
             try {
-                _stations.value = radioRepository.searchStations(name = query)
+                _stations.value = radioRepository.searchStations(
+                    name = query.ifBlank { null },
+                    tag = tag,
+                    countryCode = country
+                )
             } catch (e: Exception) {
                 _errorMessage.value = e.message
             } finally {
