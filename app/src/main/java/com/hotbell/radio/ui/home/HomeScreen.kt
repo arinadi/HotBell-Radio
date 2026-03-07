@@ -84,41 +84,7 @@ fun HomeScreen(
 ) {
     val alarms by viewModel.alarms.collectAsState()
     val countdowns by viewModel.alarmCountdowns.collectAsState()
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    var showPermissionsDialog by remember { mutableStateOf(false) }
-
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            ModalDrawerSheet(
-                drawerContainerColor = PitchBlack
-            ) {
-                Spacer(modifier = Modifier.height(32.dp))
-                Text(
-                    "HotBell Menu",
-                    color = NeonRed,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(16.dp)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                NavigationDrawerItem(
-                    label = { Text("Setup Permissions", color = Color.White) },
-                    selected = false,
-                        onClick = {
-                            scope.launch { drawerState.close() }
-                            showPermissionsDialog = true
-                        },
-                    modifier = Modifier.padding(horizontal = 12.dp)
-                )
-            }
-        }
-    ) {
-        if (showPermissionsDialog) {
-            PermissionsDialog(onDismiss = { showPermissionsDialog = false })
-        }
 
         Scaffold(
             containerColor = PitchBlack,
@@ -214,7 +180,6 @@ fun HomeScreen(
                 }
             }
         }
-    }
 }
 
 @Composable
