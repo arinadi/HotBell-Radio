@@ -36,6 +36,7 @@ class AlarmEditViewModel(application: Application) : AndroidViewModel(applicatio
     private var editingAlarmId: String? = null
 
     fun loadAlarm(alarmId: String) {
+        if (editingAlarmId == alarmId) return // Prevent overwriting user edits when returning from station selection
         viewModelScope.launch {
             alarmRepository.getAlarmById(alarmId)?.let { alarm ->
                 editingAlarmId = alarm.id
