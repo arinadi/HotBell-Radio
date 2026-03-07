@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -44,7 +45,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -54,6 +61,7 @@ import com.hotbell.radio.player.PlaybackState
 import com.hotbell.radio.ui.theme.DarkGray
 import com.hotbell.radio.ui.theme.ElectricBlue
 import com.hotbell.radio.ui.theme.NeonRed
+import com.hotbell.radio.ui.theme.HotBellOrange
 import com.hotbell.radio.ui.theme.PitchBlack
 
 private val COUNTRY_FILTERS = listOf(
@@ -105,24 +113,11 @@ fun RadioExplorerScreen(
 
     val favoriteUuids = favorites.map { it.stationUuid }.toSet()
 
+    var countryMenuExpanded by remember { mutableStateOf(false) }
+    var tagMenuExpanded by remember { mutableStateOf(false) }
+
     Scaffold(
-        containerColor = PitchBlack,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        if (isSelectMode) "Select Station" else "Explore Radio",
-                        color = ElectricBlue
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = ElectricBlue)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = PitchBlack)
-            )
-        }
+        containerColor = PitchBlack
     ) { padding ->
         Column(
             modifier = Modifier
@@ -130,110 +125,133 @@ fun RadioExplorerScreen(
                 .padding(padding)
                 .padding(horizontal = 16.dp)
         ) {
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Custom Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (isSelectMode) {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Text(
+                    text = if (isSelectMode) "Select Station" else "Explore Radio",
+                    color = Color.White,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+
             // Search bar
-            TextField(
+            OutlinedTextField(
                 value = searchQuery,
                 onValueChange = {
                     searchQuery = it
                     viewModel.searchStations(it)
                 },
-                placeholder = { Text("Search stations...", color = DarkGray) },
+                placeholder = { Text("Search stations...", color = Color.Gray) },
                 modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.Gray) },
+                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White,
-                    focusedContainerColor = DarkGray.copy(alpha = 0.3f),
-                    unfocusedContainerColor = DarkGray.copy(alpha = 0.2f),
-                    cursorColor = ElectricBlue,
-                    focusedIndicatorColor = ElectricBlue,
-                    unfocusedIndicatorColor = Color.Transparent
+                    focusedContainerColor = DarkGray.copy(alpha = 0.5f),
+                    unfocusedContainerColor = DarkGray.copy(alpha = 0.5f),
+                    cursorColor = HotBellOrange,
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent
                 ),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(16.dp),
                 singleLine = true
             )
+            
+            Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Country filter chips
-            Text("Country", color = DarkGray, fontSize = 11.sp)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                COUNTRY_FILTERS.forEach { (code, label) ->
-                    FilterChip(
-                        selected = selectedCountry == code,
-                        onClick = { viewModel.setCountryFilter(code) },
-                        label = { Text(label, fontSize = 11.sp) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = ElectricBlue.copy(alpha = 0.3f),
-                            selectedLabelColor = ElectricBlue,
-                            containerColor = DarkGray.copy(alpha = 0.15f),
-                            labelColor = DarkGray
-                        )
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // Genre/Tag filter chips
-            Text("Genre", color = DarkGray, fontSize = 11.sp)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                TAG_FILTERS.forEach { (tag, label) ->
-                    FilterChip(
-                        selected = selectedTag == tag,
-                        onClick = { viewModel.setTagFilter(tag) },
-                        label = { Text(label, fontSize = 11.sp) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = NeonRed.copy(alpha = 0.3f),
-                            selectedLabelColor = NeonRed,
-                            containerColor = DarkGray.copy(alpha = 0.15f),
-                            labelColor = DarkGray
-                        )
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Playing indicator
-            if (playbackState is PlaybackState.Playing || playbackState is PlaybackState.Buffering) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = NeonRed.copy(alpha = 0.2f)),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+            // Dropdown Filters
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Country Dropdown
+                Box(modifier = Modifier.weight(1f)) {
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = { countryMenuExpanded = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                            containerColor = DarkGray.copy(alpha = 0.3f),
+                            contentColor = Color.White
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, if (selectedCountry != null) HotBellOrange else DarkGray),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            text = when (playbackState) {
-                                is PlaybackState.Playing -> "▶ ${(playbackState as PlaybackState.Playing).stationName}"
-                                is PlaybackState.Buffering -> "⏳ Buffering..."
-                                else -> ""
-                            },
-                            color = NeonRed,
-                            fontSize = 13.sp,
-                            modifier = Modifier.weight(1f)
+                            text = COUNTRY_FILTERS.firstOrNull { it.first == selectedCountry }?.second ?: "All Countries",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
-                        IconButton(onClick = { viewModel.stopPlayback() }, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Default.Close, contentDescription = "Stop", tint = NeonRed, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.weight(1f))
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                    }
+                    androidx.compose.material3.DropdownMenu(
+                        expanded = countryMenuExpanded,
+                        onDismissRequest = { countryMenuExpanded = false },
+                        modifier = Modifier.background(DarkGray)
+                    ) {
+                        COUNTRY_FILTERS.forEach { (code, label) ->
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text(label, color = Color.White) },
+                                onClick = {
+                                    viewModel.setCountryFilter(code)
+                                    countryMenuExpanded = false
+                                }
+                            )
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+
+                // Genre Dropdown
+                Box(modifier = Modifier.weight(1f)) {
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = { tagMenuExpanded = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                            containerColor = DarkGray.copy(alpha = 0.3f),
+                            contentColor = Color.White
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, if (selectedTag != null) HotBellOrange else DarkGray),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = TAG_FILTERS.firstOrNull { it.first == selectedTag }?.second ?: "All Genres",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                    }
+                    androidx.compose.material3.DropdownMenu(
+                        expanded = tagMenuExpanded,
+                        onDismissRequest = { tagMenuExpanded = false },
+                        modifier = Modifier.background(DarkGray)
+                    ) {
+                        TAG_FILTERS.forEach { (tag, label) ->
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text(label, color = Color.White) },
+                                onClick = {
+                                    viewModel.setTagFilter(tag)
+                                    tagMenuExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
             }
+
+            // Playing indicator removed since NowPlayingBar is global
+
 
             // Loading/Error
             if (isLoading) {
@@ -252,11 +270,14 @@ fun RadioExplorerScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(stations, key = { it.stationUuid }) { station ->
+                    val isStationPlaying = playbackState is PlaybackState.Playing && (playbackState as PlaybackState.Playing).stationName == station.name
                     StationCard(
                         station = station,
                         isFavorite = station.stationUuid in favoriteUuids,
                         isSelectMode = isSelectMode,
+                        isPlaying = isStationPlaying,
                         onPlay = { viewModel.playStation(station) },
+                        onStop = { viewModel.stopPlayback() },
                         onToggleFavorite = { viewModel.toggleFavorite(station) },
                         onSelect = { onStationSelected?.invoke(station) }
                     )
@@ -271,14 +292,19 @@ private fun StationCard(
     station: StationNetworkModel,
     isFavorite: Boolean,
     isSelectMode: Boolean,
+    isPlaying: Boolean,
     onPlay: () -> Unit,
+    onStop: () -> Unit,
     onToggleFavorite: () -> Unit,
     onSelect: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = DarkGray.copy(alpha = 0.3f)),
-        shape = RoundedCornerShape(12.dp)
+        modifier = Modifier.fillMaxWidth().clickable(enabled = isSelectMode, onClick = onSelect),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isPlaying) HotBellOrange.copy(alpha = 0.15f) else DarkGray.copy(alpha = 0.2f)
+        ),
+        border = if (isPlaying) androidx.compose.foundation.BorderStroke(1.dp, HotBellOrange.copy(alpha = 0.5f)) else null,
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
             modifier = Modifier
@@ -286,52 +312,62 @@ private fun StationCard(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Play Button on far left inside a circular background
+            IconButton(
+                onClick = if (isPlaying) onStop else onPlay,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(HotBellOrange.copy(alpha = if (isPlaying) 0.1f else 0.2f))
+            ) {
+                Icon(
+                    if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    contentDescription = if (isPlaying) "Pause" else "Play",
+                    tint = HotBellOrange,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.width(16.dp))
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = station.name,
                     color = Color.White,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Row {
-                    station.codec?.let {
-                        Text(text = it, color = DarkGray, fontSize = 11.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    station.countryCode?.let {
+                        Text(text = "🏁 $it", color = Color.Gray, fontSize = 12.sp)
                         Spacer(modifier = Modifier.width(8.dp))
                     }
-                    station.countryCode?.let {
-                        Text(text = it, color = DarkGray, fontSize = 11.sp)
+                    station.codec?.let {
+                        Text(text = it, color = Color.Gray, fontSize = 12.sp)
                         Spacer(modifier = Modifier.width(8.dp))
                     }
                     if (station.bitrate > 0) {
-                        Text(text = "${station.bitrate}kbps", color = DarkGray, fontSize = 11.sp)
+                        Text(text = "${station.bitrate}kbps", color = Color.Gray, fontSize = 12.sp)
                     }
                 }
             }
 
             if (isSelectMode) {
                 IconButton(onClick = onSelect) {
-                    Text("✓", color = ElectricBlue, fontSize = 18.sp)
+                    Text("✓", color = HotBellOrange, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 }
             } else {
                 IconButton(onClick = onToggleFavorite) {
                     Icon(
                         if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = "Favorite",
-                        tint = if (isFavorite) NeonRed else DarkGray,
-                        modifier = Modifier.size(20.dp)
+                        tint = if (isFavorite) HotBellOrange else Color.Gray,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
-            }
-
-            IconButton(onClick = onPlay) {
-                Icon(
-                    Icons.Default.PlayArrow,
-                    contentDescription = "Play",
-                    tint = ElectricBlue,
-                    modifier = Modifier.size(24.dp)
-                )
             }
         }
     }

@@ -62,4 +62,25 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun stopRadio() {
         com.hotbell.radio.player.RadioPlayerManager.stop(getApplication())
     }
+
+    fun testWake(context: android.content.Context) {
+        viewModelScope.launch {
+            val allAlarms = db.alarmDao().getAllOnce()
+            val alarmToTest = allAlarms.firstOrNull { it.isEnabled } ?: allAlarms.firstOrNull()
+            
+            if (alarmToTest != null) {
+                val intent = android.content.Intent(context, com.hotbell.radio.ui.wakeup.WakeUpActivity::class.java).apply {
+                    flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    putExtra("EXTRA_ALARM_ID", alarmToTest.id)
+                    putExtra("EXTRA_STATION_UUID", alarmToTest.stationUuid)
+                    putExtra("EXTRA_STATION_NAME", alarmToTest.stationName)
+                    putExtra("EXTRA_STATION_URL", alarmToTest.stationUrl)
+                    putExtra("EXTRA_VIBRATE", alarmToTest.isVibrateEnabled)
+                }
+                context.startActivity(intent)
+            } else {
+                android.widget.Toast.makeText(context, "Please add an alarm first", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 }

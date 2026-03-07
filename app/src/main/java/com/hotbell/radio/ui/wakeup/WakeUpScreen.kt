@@ -10,6 +10,9 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.repeatable
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -19,10 +22,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
@@ -41,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -51,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hotbell.radio.ui.theme.DarkGray
 import com.hotbell.radio.ui.theme.ElectricBlue
+import com.hotbell.radio.ui.theme.HotBellOrange
 import com.hotbell.radio.ui.theme.NeonRed
 import com.hotbell.radio.ui.theme.PitchBlack
 import kotlinx.coroutines.CoroutineScope
@@ -86,16 +93,23 @@ fun WakeUpScreen(
     val coroutineScope = rememberCoroutineScope()
 
     val colors = listOf(
-        Color(0xFFE53935), // Red
-        Color(0xFF1E88E5), // Blue
-        Color(0xFF43A047), // Green
-        Color(0xFFFFB300)  // Amber
+        Color.White,
+        Color.White,
+        Color.White,
+        Color.White
     )
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(PitchBlack)
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        HotBellOrange,
+                        Color(0xFFE65100) // Deep Orange
+                    )
+                )
+            )
     ) {
         // Flash overlay
         Box(
@@ -117,6 +131,13 @@ fun WakeUpScreen(
                 modifier = Modifier.padding(top = 48.dp)
             ) {
                 Text(
+                    text = "WAKE UP!",
+                    color = Color.White,
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 4.sp
+                )
+                Text(
                     text = timeFormat.format(Date(currentTime)),
                     color = Color.White,
                     fontSize = 72.sp,
@@ -125,7 +146,7 @@ fun WakeUpScreen(
                 )
                 Text(
                     text = dateFormat.format(Date(currentTime)),
-                    color = ElectricBlue,
+                    color = Color.White.copy(alpha = 0.8f),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -151,8 +172,29 @@ fun WakeUpScreen(
                 } else {
                     Text(
                         text = "Radio: ${stationName ?: "Unknown Station"}",
-                        color = Color.White.copy(alpha = 0.7f),
+                        color = Color.White.copy(alpha = 0.9f),
                         fontSize = 18.sp
+                    )
+                }
+            }
+
+            // Live Radio Card
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.2f)),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.padding(vertical = 16.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
+                ) {
+                    VisualEqualizer()
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "LIVE RADIO",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 2.sp
                     )
                 }
             }
@@ -164,14 +206,14 @@ fun WakeUpScreen(
             ) {
                 Text(
                     text = "Brain Check to Dismiss",
-                    color = ElectricBlue,
+                    color = Color.White,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = DarkGray.copy(alpha = 0.5f)),
+                    colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.2f)),
                     shape = RoundedCornerShape(24.dp)
                 ) {
                     Column(
@@ -293,7 +335,7 @@ private fun ChallengeButton(
             .offset { IntOffset(shakeOffset.value.roundToInt(), 0) }
             .height(80.dp)
             .clip(RoundedCornerShape(20.dp))
-            .background(baseColor.copy(alpha = 0.5f))
+            .background(baseColor.copy(alpha = 0.3f))
             .pointerInput(isCorrect, text) {
                 detectTapGestures(
                     onPress = {
@@ -347,7 +389,7 @@ private fun ChallengeButton(
         // Button Text
         Text(
             text = text,
-            color = if (progressAnim.value > 0.5f) PitchBlack else Color.White,
+            color = PitchBlack,
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
@@ -400,6 +442,34 @@ private fun vibrateDevice(context: Context, isError: Boolean = false) {
             vibrator.vibrate(longArrayOf(0, 400, 100, 400, 100, 400, 100, 1500), -1)
         } else {
              vibrator.vibrate(200)
+        }
+    }
+}
+
+@Composable
+fun VisualEqualizer() {
+    val infiniteTransition = rememberInfiniteTransition()
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.Bottom,
+        modifier = Modifier.height(24.dp)
+    ) {
+        for (i in 0 until 4) {
+            val h = infiniteTransition.animateFloat(
+                initialValue = 0.3f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 300 + (100 * i), easing = LinearEasing),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "eq_$i"
+            )
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .fillMaxHeight(h.value)
+                    .background(Color.White, RoundedCornerShape(2.dp))
+            )
         }
     }
 }

@@ -8,6 +8,9 @@ import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
@@ -25,8 +28,11 @@ import com.hotbell.radio.ui.alarm.AlarmEditViewModel
 import com.hotbell.radio.ui.home.HomeScreen
 import com.hotbell.radio.ui.home.HomeViewModel
 import com.hotbell.radio.ui.navigation.Route
+import com.hotbell.radio.ui.navigation.BottomNavigationBar
 import com.hotbell.radio.ui.radio.RadioExplorerScreen
 import com.hotbell.radio.ui.radio.RadioViewModel
+import com.hotbell.radio.ui.favorites.FavoritesScreen
+import com.hotbell.radio.ui.settings.SettingsScreen
 import com.hotbell.radio.ui.theme.HotBellTheme
 import com.hotbell.radio.ui.theme.PitchBlack
 import android.app.AlarmManager
@@ -69,11 +75,21 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
                     val radioViewModel: RadioViewModel = viewModel()
 
-                    NavHost(
-                        navController = navController,
-                        startDestination = Route.Home.route
-                    ) {
-                        // Home Screen
+                    Scaffold(
+                        bottomBar = {
+                            Column {
+                                com.hotbell.radio.ui.components.NowPlayingBar()
+                                BottomNavigationBar(navController = navController)
+                            }
+                        },
+                        containerColor = PitchBlack
+                    ) { innerPadding ->
+                        NavHost(
+                            navController = navController,
+                            startDestination = Route.Home.route,
+                            modifier = Modifier.padding(innerPadding)
+                        ) {
+                            // Home Screen
                         composable(Route.Home.route) {
                             val homeViewModel: HomeViewModel = viewModel()
                             HomeScreen(
@@ -132,6 +148,16 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
+                        // Favorites Screen
+                        composable(Route.Favorites.route) {
+                            FavoritesScreen()
+                        }
+
+                        // Settings Screen
+                        composable(Route.Settings.route) {
+                            SettingsScreen()
+                        }
+
                         // Alarm Edit Screen
                         composable(
                             Route.AlarmEdit.route,
@@ -180,6 +206,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
         }
     }
 

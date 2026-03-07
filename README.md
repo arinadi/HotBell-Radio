@@ -7,12 +7,13 @@ If you are a deep sleeper, traditional alarms might not be enough. HotBell ensur
 ## Features
 
 - **Radio Alarms**: Wake up to live internet radio from all around the world, powered by the [Radio Browser API](https://www.radio-browser.info/).
-- **Wake-Up Challenge**: Stop the alarm by holding down the correct answer to a randomly generated math problem.
-- **Gradual Volume Crescendo**: Don't get startled! Alarms start softly at 10% volume and gradually increase to full volume. If you don't wake up within a minute, the app uses a *Loudness Enhancer* to boost the volume up to 150%.
-- **Interactive Feedback**: When solving the wake-up puzzle, wrong answers are met with strong haptic vibrations, a red flashing screen, and a shaking animation to stimulate your brain.
-- **Fail-safe Fallback Ringtones**: If there is no internet connection or the selected radio station fails to play within 10 seconds, the app plays a built-in alarm ringtone.
-- **Modern UI**: Full Dark Mode design with vibrant "Neon Red" and "Electric Blue" accents built purely using Jetpack Compose.
-- **Battery & Doze Optimized**: Uses exact alarms (`AlarmManager.setAlarmClock()`) and Full-Screen Intents (Android 10+) to ensure unreliable doze states don't skip your alarm. Android 14 full-screen intent limitations are handled seamlessly via an in-app permission manager.
+- **Wake-Up Challenge**: Solve a math quiz with a hold-to-confirm gesture to ensure you're fully awake.
+- **Gradual Volume Crescendo**: Alarms start at 10% volume and increase to 150% using a *Loudness Enhancer* for heavy sleepers.
+- **Interactive Feedback**: Screen flashing, intensive haptic vibrations, and shaking animations for a stimulating wake-up experience.
+- **Now Playing Bar**: A global playback control bar that persists across all screens.
+- **Refined Alarm Planning**: Modern, mockup-aligned Alarm Edit screen with circular day selectors and inline time editing.
+- **Branded Experience**: Custom "H." logo and consistent "HotBell Orange" accents throughout the app.
+- **Reliability Suite**: Comprehensive permission management (Battery Optimization, Exact Alarms, Full-Screen Intents) to ensure 100% alarm reliability on Android 10-14+.
 
 ## Technologies Used
 
@@ -35,10 +36,11 @@ If you are a deep sleeper, traditional alarms might not be enough. HotBell ensur
 
 ## Setting up Permissions
 
-Make sure you grant the required permissions when prompted:
-* **Notifications**: To view the active media playback service.
-* **Exact Alarms**: Required for Android 12+ to schedule wake-up events precisely.
-* **Full-Screen Intents**: Required for Android 14+ to wake up the screen from sleep cleanly when the alarm triggers.
+Make sure you grant the required permissions in the **Settings** screen:
+* **Notifications**: To see the active playback and alarm status.
+* **Battery Optimization**: Critical to prevent the system from killing the alarm service in the background.
+* **Exact Alarms**: Required for Android 12+ for precision scheduling.
+* **Full-Screen Intent**: Required for Android 14+ to show the wake-up screen while the device is locked.
 
 ## License
 

@@ -1,0 +1,23 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Redesigned H. with more margin/padding -->
+    <!-- Left bar of H -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M34,34 L42,34 L42,74 L34,74 Z" />
+    <!-- Right bar of H -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M66,34 L74,34 L74,74 L66,74 Z" />
+    <!-- Middle bar of H -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42,50 L66,50 L66,58 L42,58 Z" />
+    <!-- Dot orange -->
+    <path
+        android:fillColor="#FF6F00"
+        android:pathData="M78,70 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+</vector>

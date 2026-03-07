@@ -42,6 +42,12 @@ class AlarmEditViewModel(application: Application) : AndroidViewModel(applicatio
     private val _isLoaded = MutableStateFlow(false)
     val isLoaded: StateFlow<Boolean> = _isLoaded.asStateFlow()
 
+    private val _label = MutableStateFlow("")
+    val label: StateFlow<String> = _label.asStateFlow()
+
+    private val _isVibrateEnabled = MutableStateFlow(true)
+    val isVibrateEnabled: StateFlow<Boolean> = _isVibrateEnabled.asStateFlow()
+
     private var editingAlarmId: String? = null
 
     fun loadAlarm(alarmId: String?) {
@@ -59,6 +65,8 @@ class AlarmEditViewModel(application: Application) : AndroidViewModel(applicatio
                 _stationUuid.value = alarm.stationUuid
                 _stationName.value = alarm.stationName
                 _stationUrl.value = alarm.stationUrl
+                _label.value = alarm.label ?: ""
+                _isVibrateEnabled.value = alarm.isVibrateEnabled
             }
             _isLoaded.value = true
         }
@@ -77,6 +85,14 @@ class AlarmEditViewModel(application: Application) : AndroidViewModel(applicatio
         _stationUuid.value = uuid
         _stationName.value = name
         _stationUrl.value = url
+    }
+
+    fun setLabel(text: String) {
+        _label.value = text
+    }
+
+    fun setVibrate(enabled: Boolean) {
+        _isVibrateEnabled.value = enabled
     }
 
     fun testAlarm(context: Context) {
@@ -100,13 +116,24 @@ class AlarmEditViewModel(application: Application) : AndroidViewModel(applicatio
                 isEnabled = true,
                 stationUuid = _stationUuid.value,
                 stationName = _stationName.value,
-                stationUrl = _stationUrl.value
+                stationUrl = _stationUrl.value,
+                label = _label.value,
+                isVibrateEnabled = _isVibrateEnabled.value
             )
             if (editingAlarmId != null) {
                 alarmRepository.updateAlarm(alarm)
             } else {
                 alarmRepository.createAlarm(alarm)
             }
+            onDone()
+        }
+    }
+
+    fun deleteAlarm(onDone: () -> Unit) {
+        val id = editingAlarmId ?: return
+        viewModelScope.launch {
+            val alarm = alarmRepository.getAlarmById(id) ?: return@launch
+            alarmRepository.deleteAlarm(alarm)
             onDone()
         }
     }

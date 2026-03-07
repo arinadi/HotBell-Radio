@@ -1,57 +1,25 @@
 package com.hotbell.radio.ui.alarm
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hotbell.radio.ui.theme.DarkGray
-import com.hotbell.radio.ui.theme.ElectricBlue
-import com.hotbell.radio.ui.theme.NeonRed
-import com.hotbell.radio.ui.theme.PitchBlack
-
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.TimePickerDefaults
-import androidx.compose.material3.rememberTimePickerState
-
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import com.hotbell.radio.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -66,6 +34,8 @@ fun AlarmEditScreen(
     val minute by viewModel.minute.collectAsState()
     val daysOfWeek by viewModel.daysOfWeek.collectAsState()
     val stationName by viewModel.stationName.collectAsState()
+    val label by viewModel.label.collectAsState()
+    val isVibrateEnabled by viewModel.isVibrateEnabled.collectAsState()
     val isLoaded by viewModel.isLoaded.collectAsState()
 
     val scrollState = rememberScrollState()
@@ -77,20 +47,34 @@ fun AlarmEditScreen(
     Scaffold(
         containerColor = PitchBlack,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        if (alarmId != null) "Edit Alarm" else "Add Alarm",
-                        color = ElectricBlue
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = ElectricBlue)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = PitchBlack)
-            )
+            // Custom Header from Mockup
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Cancel",
+                    color = Color.Gray,
+                    fontSize = 18.sp,
+                    modifier = Modifier.clickable { onBack() }
+                )
+                Text(
+                    text = if (alarmId != null) "Edit Alarm" else "Add Alarm",
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Save",
+                    color = HotBellOrange,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { viewModel.saveAlarm(onDone) }
+                )
+            }
         }
     ) { padding ->
         Column(
@@ -104,6 +88,7 @@ fun AlarmEditScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             if (isLoaded) {
+                var isEditingTime by rememberSaveable { mutableStateOf(alarmId == null) }
                 val timePickerState = rememberTimePickerState(
                     initialHour = hour,
                     initialMinute = minute,
@@ -114,106 +99,248 @@ fun AlarmEditScreen(
                     viewModel.setTime(timePickerState.hour, timePickerState.minute)
                 }
 
-                TimePicker(
-                    state = timePickerState,
-                    colors = TimePickerDefaults.colors(
-                        clockDialColor = DarkGray.copy(alpha = 0.5f),
-                        clockDialSelectedContentColor = PitchBlack,
-                        clockDialUnselectedContentColor = Color.White,
-                        selectorColor = ElectricBlue,
-                        timeSelectorSelectedContainerColor = ElectricBlue.copy(alpha = 0.3f),
-                        timeSelectorUnselectedContainerColor = DarkGray.copy(alpha = 0.5f),
-                        timeSelectorSelectedContentColor = ElectricBlue,
-                        timeSelectorUnselectedContentColor = Color.White
-                    )
-                )
-            } else {
-                Spacer(modifier = Modifier.height(300.dp)) // Placeholder height
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Day selector
-            Text("Repeat", color = DarkGray, fontSize = 13.sp)
-            Spacer(modifier = Modifier.height(8.dp))
-            val dayLabels = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                dayLabels.forEachIndexed { index, label ->
-                    val isSelected = daysOfWeek and (1 shl index) != 0
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { viewModel.toggleDay(index) },
-                        label = { Text(label, fontSize = 12.sp) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = ElectricBlue.copy(alpha = 0.3f),
-                            selectedLabelColor = ElectricBlue,
-                            containerColor = DarkGray.copy(alpha = 0.2f),
-                            labelColor = DarkGray
+                if (isEditingTime) {
+                    TimePicker(
+                        state = timePickerState,
+                        colors = TimePickerDefaults.colors(
+                            clockDialColor = DarkGray.copy(alpha = 0.5f),
+                            clockDialSelectedContentColor = PitchBlack,
+                            clockDialUnselectedContentColor = Color.White,
+                            selectorColor = HotBellOrange,
+                            timeSelectorSelectedContainerColor = HotBellOrange.copy(alpha = 0.3f),
+                            timeSelectorUnselectedContainerColor = DarkGray.copy(alpha = 0.5f),
+                            timeSelectorSelectedContentColor = HotBellOrange,
+                            timeSelectorUnselectedContentColor = Color.White
                         )
                     )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = { isEditingTime = false },
+                        colors = ButtonDefaults.buttonColors(containerColor = HotBellOrange),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text("Set Time", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    // Stylized Time Display from Mockup
+                    Row(
+                        modifier = Modifier
+                            .clickable { isEditingTime = true }
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = String.format("%02d", hour),
+                            fontSize = 80.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = HotBellOrange,
+                            modifier = Modifier
+                                .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(16.dp))
+                                .padding(horizontal = 12.dp)
+                        )
+                        Text(
+                            text = " : ",
+                            fontSize = 60.sp,
+                            color = DarkGray,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                        Text(
+                            text = String.format("%02d", minute),
+                            fontSize = 80.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = Color.White.copy(alpha = 0.3f)
+                        )
+                    }
+                }
+            } else {
+                Spacer(modifier = Modifier.height(200.dp))
+            }
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            // Repeat Days Section
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    "REPEAT DAYS",
+                    color = Color.Gray,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    val dayLabels = listOf("S", "M", "T", "W", "T", "F", "S")
+                    dayLabels.forEachIndexed { index, label ->
+                        val isSelected = daysOfWeek and (1 shl index) != 0
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(if (isSelected) HotBellOrange else DarkGray.copy(alpha = 0.2f))
+                                .clickable { viewModel.toggleDay(index) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = label,
+                                color = if (isSelected) Color.White else Color.Gray,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Station selector
-            Text("Wake Up Station", color = DarkGray, fontSize = 13.sp)
-            Spacer(modifier = Modifier.height(8.dp))
+            // Configuration Menu Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = DarkGray.copy(alpha = 0.2f)),
-                shape = RoundedCornerShape(12.dp),
-                onClick = onSelectStation
+                colors = CardDefaults.cardColors(containerColor = DarkGray.copy(alpha = 0.1f)),
+                shape = RoundedCornerShape(20.dp)
             ) {
-                Row(
+                Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                    // Label Row
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            androidx.compose.foundation.text.BasicTextField(
+                                value = label,
+                                onValueChange = { viewModel.setLabel(it) },
+                                textStyle = androidx.compose.ui.text.TextStyle(
+                                    color = Color.White,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                decorationBox = { innerTextField ->
+                                    if (label.isEmpty()) {
+                                        Text("Alarm Label", color = DarkGray, fontSize = 16.sp)
+                                    }
+                                    innerTextField()
+                                }
+                            )
+                        }
+                    }
+
+                    androidx.compose.material3.HorizontalDivider(
+                        color = Color.White.copy(alpha = 0.05f),
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+
+                    // Station Row
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelectStation() }
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.05f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = null,
+                            tint = HotBellOrange,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stationName ?: "Select Stream",
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "WAKE UP STREAM",
+                            color = DarkGray,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = DarkGray
+                    )
+                }
+
+                    androidx.compose.material3.HorizontalDivider(
+                        color = Color.White.copy(alpha = 0.05f),
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+
+                    // Vibrate Row
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Vibrate",
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Switch(
+                            checked = isVibrateEnabled,
+                            onCheckedChange = { viewModel.setVibrate(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = HotBellOrange,
+                                uncheckedThumbColor = Color.Gray,
+                                uncheckedTrackColor = DarkGray.copy(alpha = 0.5f)
+                            )
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            // Delete Button
+            if (alarmId != null) {
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .height(56.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(NeonRed.copy(alpha = 0.1f))
+                        .clickable { viewModel.deleteAlarm(onDone) },
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = stationName ?: "Tap to select a station",
-                        color = if (stationName != null) NeonRed else DarkGray,
-                        fontSize = 15.sp,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text("🎵", fontSize = 18.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = null,
+                            tint = NeonRed,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Delete Alarm",
+                            color = NeonRed,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
-
-            Spacer(modifier = Modifier.weight(1f))
+            
             Spacer(modifier = Modifier.height(32.dp))
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 32.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Test button
-                val context = androidx.compose.ui.platform.LocalContext.current
-                Button(
-                    onClick = { viewModel.testAlarm(context) },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = ElectricBlue),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Text("Test", fontSize = 16.sp, color = PitchBlack, fontWeight = FontWeight.Bold)
-                }
-
-                // Save button
-                Button(
-                    onClick = { viewModel.saveAlarm(onDone) },
-                    modifier = Modifier.weight(2f),
-                    colors = ButtonDefaults.buttonColors(containerColor = NeonRed),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Icon(Icons.Default.Check, contentDescription = null, tint = Color.White)
-                    Text("  Save", fontSize = 16.sp, color = Color.White)
-                }
-            }
         }
     }
 }

@@ -12,5 +12,7 @@ data class AlarmEntity(
     val isEnabled: Boolean,
     val stationUuid: String?,
     val stationName: String?,
-    val stationUrl: String?
+    val stationUrl: String?,
+    val label: String? = "",
+    val isVibrateEnabled: Boolean = true
 )

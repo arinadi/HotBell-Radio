@@ -43,9 +43,13 @@ import androidx.compose.ui.unit.sp
 import com.hotbell.radio.data.AlarmEntity
 import com.hotbell.radio.ui.theme.ElectricBlue
 import com.hotbell.radio.ui.theme.NeonRed
+import com.hotbell.radio.ui.theme.HotBellOrange
 import com.hotbell.radio.ui.theme.PitchBlack
 import com.hotbell.radio.ui.theme.DarkGray
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.ui.text.style.TextOverflow
 
 import android.content.Intent
 import android.net.Uri
@@ -120,31 +124,13 @@ fun HomeScreen(
 
         Scaffold(
             containerColor = PitchBlack,
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            text = "HotBell Radio",
-                            color = ElectricBlue,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = ElectricBlue)
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = PitchBlack)
-                )
-            },
             floatingActionButton = {
                 FloatingActionButton(
                     onClick = onAddAlarm,
-                    containerColor = NeonRed,
+                    containerColor = HotBellOrange,
                     shape = CircleShape
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Alarm", tint = PitchBlack)
+                    Icon(Icons.Default.Add, contentDescription = "Add Alarm", tint = Color.White)
                 }
             }
         ) { padding ->
@@ -154,13 +140,53 @@ fun HomeScreen(
                     .padding(padding)
                     .padding(horizontal = 16.dp)
             ) {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                TextButton(onClick = onExploreRadio) {
-                    Text("🎵 Explore Radio", color = ElectricBlue, fontSize = 14.sp)
+                Spacer(modifier = Modifier.height(32.dp))
+                
+                // Custom Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Row {
+                            Text(
+                                text = "HotBell",
+                                color = Color.White,
+                                fontSize = 36.sp,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            Text(
+                                text = ".",
+                                color = HotBellOrange,
+                                fontSize = 36.sp,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                        }
+                        
+                        val nextAlarmStr = countdowns.values.firstOrNull { it != null } ?: "No active alarms"
+                        Text(
+                            text = if (nextAlarmStr == "No active alarms") nextAlarmStr else "Next alarm in $nextAlarmStr",
+                            color = Color.Gray,
+                            fontSize = 14.sp
+                        )
+                    }
+                    
+                    // TEST WAKE BUTTON
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(NeonRed.copy(alpha = 0.1f))
+                            .clickable {
+                                viewModel.testWake(context)
+                            }
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text("TEST WAKE", color = NeonRed, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
+                
+                Spacer(modifier = Modifier.height(24.dp))
 
                 if (alarms.isEmpty()) {
                     Box(
@@ -186,27 +212,6 @@ fun HomeScreen(
                                 onDelete = { viewModel.deleteAlarm(alarm) }
                             )
                         }
-
-                        if (favorites.isNotEmpty()) {
-                            item {
-                                Spacer(modifier = Modifier.height(24.dp))
-                                Text(
-                                    text = "Favorite Stations",
-                                    color = ElectricBlue,
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(bottom = 12.dp)
-                                )
-                            }
-
-                            items(favorites, key = { it.stationUuid }) { station ->
-                                FavoriteStationCard(
-                                    station = station,
-                                    onPlay = { viewModel.playFavoriteStation(station) },
-                                    onStop = { viewModel.stopRadio() }
-                                )
-                            }
-                        }
                     }
                 }
             }
@@ -223,7 +228,7 @@ private fun AlarmCard(
     onDelete: () -> Unit
 ) {
     val bgColor by animateColorAsState(
-        targetValue = if (alarm.isEnabled) DarkGray.copy(alpha = 0.4f) else DarkGray.copy(alpha = 0.15f),
+        targetValue = if (alarm.isEnabled) DarkGray.copy(alpha = 0.5f) else DarkGray.copy(alpha = 0.2f),
         label = "cardBg"
     )
 
@@ -232,59 +237,115 @@ private fun AlarmCard(
             .fillMaxWidth()
             .clickable { onEdit() },
         colors = CardDefaults.cardColors(containerColor = bgColor),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(24.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(20.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = String.format("%02d:%02d", alarm.timeHour, alarm.timeMin),
-                    color = if (alarm.isEnabled) ElectricBlue else DarkGray,
-                    fontSize = 36.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = alarm.stationName ?: "No station",
-                    color = if (alarm.isEnabled) NeonRed else DarkGray,
-                    fontSize = 13.sp
-                )
-                if (alarm.isEnabled && countdown != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        text = "Ring in: $countdown",
-                        color = ElectricBlue.copy(alpha = 0.8f),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
+                        text = String.format("%02d:%02d", alarm.timeHour, alarm.timeMin),
+                        color = if (alarm.isEnabled) Color.White else Color.Gray,
+                        fontSize = 48.sp,
+                        fontWeight = FontWeight.Light,
+                        modifier = Modifier.alignByBaseline()
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = if (alarm.timeHour < 12) "AM" else "PM",
+                        color = Color.Gray,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.alignByBaseline()
                     )
                 }
-                if (alarm.daysOfWeek != 0) {
-                    Text(
-                        text = daysToString(alarm.daysOfWeek),
-                        color = DarkGray,
-                        fontSize = 12.sp
+
+                Switch(
+                    checked = alarm.isEnabled,
+                    onCheckedChange = { onToggle() },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = HotBellOrange,
+                        uncheckedThumbColor = Color.Gray,
+                        uncheckedTrackColor = DarkGray.copy(alpha = 0.5f)
                     )
+                )
+            }
+
+            if (alarm.isEnabled && countdown != null) {
+                Text(
+                    text = "Rings in $countdown",
+                    color = HotBellOrange,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            } else {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Days of the week row
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                val days = listOf("S", "M", "T", "W", "T", "F", "S")
+                days.forEachIndexed { index, dayStr ->
+                    val isSelected = alarm.daysOfWeek and (1 shl index) != 0
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clip(CircleShape)
+                            .background(if (isSelected) HotBellOrange.copy(alpha = 0.2f) else DarkGray.copy(alpha = 0.5f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = dayStr,
+                            color = if (isSelected) HotBellOrange else Color.Gray,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 
-            Switch(
-                checked = alarm.isEnabled,
-                onCheckedChange = { onToggle() },
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = NeonRed,
-                    checkedTrackColor = NeonRed.copy(alpha = 0.3f)
-                )
-            )
+            Spacer(modifier = Modifier.height(16.dp))
+            androidx.compose.material3.HorizontalDivider(color = DarkGray.copy(alpha = 0.5f))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            IconButton(onClick = onDelete) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = DarkGray,
-                    modifier = Modifier.size(20.dp)
+                    Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    tint = if (alarm.isEnabled) HotBellOrange else Color.Gray,
+                    modifier = Modifier.size(16.dp)
                 )
+                Spacer(modifier = Modifier.width(8.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = alarm.stationName ?: "Default Ringtone",
+                        color = if (alarm.isEnabled) ElectricBlue else Color.Gray,
+                        fontSize = 14.sp
+                    )
+                    Text(
+                        text = "Wake Up Routine",
+                        color = Color.Gray,
+                        fontSize = 12.sp
+                    )
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = DarkGray,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
     }
@@ -293,48 +354,6 @@ private fun AlarmCard(
 private fun daysToString(bitmask: Int): String {
     val days = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
     return days.filterIndexed { index, _ -> bitmask and (1 shl index) != 0 }.joinToString(", ")
-}
-
-@Composable
-fun FavoriteStationCard(
-    station: com.hotbell.radio.data.FavoriteStationEntity,
-    onPlay: () -> Unit,
-    onStop: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = DarkGray.copy(alpha = 0.2f)),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = station.name,
-                    color = Color.White,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = station.codec,
-                    color = Color.Gray,
-                    fontSize = 11.sp
-                )
-            }
-            IconButton(onClick = onStop) {
-                Text(text = "⏹", color = Color.White)
-            }
-            IconButton(onClick = onPlay) {
-                Text(text = "▶", color = ElectricBlue)
-            }
-        }
-    }
 }
 
 @Composable
