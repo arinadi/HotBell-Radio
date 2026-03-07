@@ -4,3 +4,8 @@
 #
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
+
+-keep class com.hotbell.radio.network.** { *; }
+-keep class com.hotbell.radio.data.** { *; }
+
+-keepattributes *Annotation*, Signature, InnerClasses, EnclosingMethod

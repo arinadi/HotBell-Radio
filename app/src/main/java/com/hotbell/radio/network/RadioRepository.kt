@@ -8,7 +8,7 @@ class RadioRepository(
         name: String? = null,
         tag: String? = null,
         countryCode: String? = null,
-        limit: Int = 50
+        limit: Int = 10
     ): List<StationNetworkModel> {
         return api.searchStations(
             name = name?.trim()?.take(100),

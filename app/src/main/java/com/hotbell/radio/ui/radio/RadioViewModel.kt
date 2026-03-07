@@ -54,7 +54,7 @@ class RadioViewModel(application: Application) : AndroidViewModel(application) {
             _isLoading.value = true
             _errorMessage.value = null
             try {
-                _stations.value = radioRepository.getTopStations(50)
+                _stations.value = radioRepository.getTopStations(10)
             } catch (e: Exception) {
                 _errorMessage.value = e.message
             } finally {
