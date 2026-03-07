@@ -46,6 +46,10 @@ import com.hotbell.radio.ui.theme.ElectricBlue
 import com.hotbell.radio.ui.theme.NeonRed
 import com.hotbell.radio.ui.theme.PitchBlack
 
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDefaults
+import androidx.compose.material3.rememberTimePickerState
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AlarmEditScreen(
@@ -59,9 +63,10 @@ fun AlarmEditScreen(
     val minute by viewModel.minute.collectAsState()
     val daysOfWeek by viewModel.daysOfWeek.collectAsState()
     val stationName by viewModel.stationName.collectAsState()
+    val isLoaded by viewModel.isLoaded.collectAsState()
 
     LaunchedEffect(alarmId) {
-        alarmId?.let { viewModel.loadAlarm(it) }
+        viewModel.loadAlarm(alarmId)
     }
 
     Scaffold(
@@ -92,8 +97,33 @@ fun AlarmEditScreen(
         ) {
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Time display (tappable to change)
-            TimeSelector(hour = hour, minute = minute, onTimeChange = viewModel::setTime)
+            if (isLoaded) {
+                val timePickerState = rememberTimePickerState(
+                    initialHour = hour,
+                    initialMinute = minute,
+                    is24Hour = true
+                )
+
+                LaunchedEffect(timePickerState.hour, timePickerState.minute) {
+                    viewModel.setTime(timePickerState.hour, timePickerState.minute)
+                }
+
+                TimePicker(
+                    state = timePickerState,
+                    colors = TimePickerDefaults.colors(
+                        clockDialColor = DarkGray.copy(alpha = 0.5f),
+                        clockDialSelectedContentColor = PitchBlack,
+                        clockDialUnselectedContentColor = Color.White,
+                        selectorColor = ElectricBlue,
+                        timeSelectorSelectedContainerColor = ElectricBlue.copy(alpha = 0.3f),
+                        timeSelectorUnselectedContainerColor = DarkGray.copy(alpha = 0.5f),
+                        timeSelectorSelectedContentColor = ElectricBlue,
+                        timeSelectorUnselectedContentColor = Color.White
+                    )
+                )
+            } else {
+                Spacer(modifier = Modifier.height(300.dp)) // Placeholder height
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -161,56 +191,6 @@ fun AlarmEditScreen(
                 Icon(Icons.Default.Check, contentDescription = null, tint = Color.White)
                 Text("  Save Alarm", fontSize = 16.sp, color = Color.White)
             }
-        }
-    }
-}
-
-@Composable
-private fun TimeSelector(hour: Int, minute: Int, onTimeChange: (Int, Int) -> Unit) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        // Hour
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Surface(
-                onClick = { onTimeChange((hour + 1) % 24, minute) },
-                color = Color.Transparent
-            ) { Text("▲", color = ElectricBlue, fontSize = 20.sp) }
-
-            Text(
-                text = String.format("%02d", hour),
-                color = ElectricBlue,
-                fontSize = 64.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Surface(
-                onClick = { onTimeChange((hour - 1 + 24) % 24, minute) },
-                color = Color.Transparent
-            ) { Text("▼", color = ElectricBlue, fontSize = 20.sp) }
-        }
-
-        Text(":", color = ElectricBlue, fontSize = 64.sp, fontWeight = FontWeight.Bold)
-
-        // Minute
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Surface(
-                onClick = { onTimeChange(hour, (minute + 1) % 60) },
-                color = Color.Transparent
-            ) { Text("▲", color = ElectricBlue, fontSize = 20.sp) }
-
-            Text(
-                text = String.format("%02d", minute),
-                color = ElectricBlue,
-                fontSize = 64.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Surface(
-                onClick = { onTimeChange(hour, (minute - 1 + 60) % 60) },
-                color = Color.Transparent
-            ) { Text("▼", color = ElectricBlue, fontSize = 20.sp) }
         }
     }
 }

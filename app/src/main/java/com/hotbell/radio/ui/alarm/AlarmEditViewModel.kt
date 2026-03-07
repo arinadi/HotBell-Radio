@@ -33,9 +33,16 @@ class AlarmEditViewModel(application: Application) : AndroidViewModel(applicatio
     private val _stationName = MutableStateFlow<String?>(null)
     val stationName: StateFlow<String?> = _stationName.asStateFlow()
 
+    private val _isLoaded = MutableStateFlow(false)
+    val isLoaded: StateFlow<Boolean> = _isLoaded.asStateFlow()
+
     private var editingAlarmId: String? = null
 
-    fun loadAlarm(alarmId: String) {
+    fun loadAlarm(alarmId: String?) {
+        if (alarmId == null) {
+            _isLoaded.value = true
+            return
+        }
         if (editingAlarmId == alarmId) return // Prevent overwriting user edits when returning from station selection
         viewModelScope.launch {
             alarmRepository.getAlarmById(alarmId)?.let { alarm ->
@@ -46,6 +53,7 @@ class AlarmEditViewModel(application: Application) : AndroidViewModel(applicatio
                 _stationUuid.value = alarm.stationUuid
                 _stationName.value = alarm.stationName
             }
+            _isLoaded.value = true
         }
     }
 
