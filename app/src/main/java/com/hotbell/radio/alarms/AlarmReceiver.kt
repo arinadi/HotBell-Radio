@@ -4,6 +4,9 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class AlarmReceiver : BroadcastReceiver() {
 
@@ -18,16 +21,19 @@ class AlarmReceiver : BroadcastReceiver() {
 
         Log.d(TAG, "Alarm fired! id=$alarmId, station=$stationName")
 
-        // Launch WakeUpActivity (will be created in Module 4)
-        // For now, log the trigger and launch a placeholder
-        val wakeUpIntent = Intent().apply {
-            setClassName(context.packageName, "com.hotbell.radio.MainActivity")
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            putExtra("ALARM_ID", alarmId)
-            putExtra("STATION_UUID", stationUuid)
-            putExtra("STATION_NAME", stationName)
-            putExtra("IS_ALARM_TRIGGER", true)
+        // Retrieve URL from DB since Intent only has UUID
+        val db = com.hotbell.radio.data.AppDatabase.getInstance(context)
+        CoroutineScope(Dispatchers.IO).launch {
+            val stationUrl = stationUuid?.let { db.favoriteStationDao().getByUuid(it)?.urlResolved }
+            
+            val wakeUpIntent = Intent(context, com.hotbell.radio.ui.wakeup.WakeUpActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                putExtra("EXTRA_ALARM_ID", alarmId)
+                putExtra("EXTRA_STATION_UUID", stationUuid ?: "")
+                putExtra("EXTRA_STATION_NAME", stationName ?: "Alarm Station")
+                putExtra("EXTRA_STATION_URL", stationUrl ?: "")
+            }
+            context.startActivity(wakeUpIntent)
         }
-        context.startActivity(wakeUpIntent)
     }
 }
