@@ -60,7 +60,18 @@ To guarantee 100% reliability, HotBell requires these permissions (configurable 
 
 ---
 
-## 📦 Getting Started
+## � Download & Install
+
+> **✅ Safe & Verified** — The APK is signed and passes **Google Play Protect** verification.
+
+1. Head to the [**Latest Release**](https://github.com/arinadi/HotBell-Radio/releases/latest) page.
+2. Download the `.apk` file from the latest release.
+3. Install on your Android device (enable *Install from Unknown Sources* if prompted).
+4. Once installed, future updates can be done directly from within the app via **Settings → Check for Updates**.
+
+---
+
+## �📦 Getting Started (Developer)
 1. Clone the repo: `git clone https://github.com/arinadi/HotBell-Radio.git`
 2. Open in Android Studio.
 3. Use the **Release** build variant for the best experience.

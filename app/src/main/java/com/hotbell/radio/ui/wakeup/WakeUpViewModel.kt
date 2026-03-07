@@ -4,6 +4,10 @@ import android.app.Application
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.hotbell.radio.player.PlaybackState
@@ -18,6 +22,7 @@ import kotlinx.coroutines.launch
 class WakeUpViewModel(application: Application) : AndroidViewModel(application) {
 
     private val ringtoneFallbackManager = RingtoneFallbackManager(application)
+    private var vibrator: Vibrator? = null
     
     private val _challenge = MutableStateFlow(MathChallengeGenerator.generate())
     val challenge: StateFlow<MathChallenge> = _challenge.asStateFlow()
@@ -43,6 +48,13 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
 
     fun startAlarm(context: Context, stationUuid: String?, stationName: String?, stationUrl: String? = null) {
         android.util.Log.d("WakeUpViewModel", "startAlarm called with stationUuid=$stationUuid, stationName=$stationName, stationUrl=$stationUrl")
+
+        // Start continuous vibration if enabled in settings
+        val prefs = getApplication<Application>().getSharedPreferences("hotbell_prefs", Context.MODE_PRIVATE)
+        if (prefs.getBoolean("vibrate_on_wake", true)) {
+            startContinuousVibration()
+        }
+
         viewModelScope.launch {
             if (stationUuid == null && stationUrl == null) {
                 android.util.Log.e("WakeUpViewModel", "Both stationUuid and stationUrl are null, triggering fallback")
@@ -108,6 +120,7 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
 
     fun dismissAlarm(onDismissed: () -> Unit) {
         android.util.Log.d("WakeUpViewModel", "Dismissing alarm")
+        vibrator?.cancel()
         fallbackTimeoutJob?.cancel()
         RadioPlayerManager.stop(getApplication())
         stopFallback()
@@ -131,8 +144,24 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
         return hasInternet
     }
 
+    private fun startContinuousVibration() {
+        val app = getApplication<Application>()
+        vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val manager = app.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            manager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            app.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+        // Repeating pattern: vibrate 800ms, pause 400ms
+        val timings = longArrayOf(0, 800, 400)
+        val amplitudes = intArrayOf(0, 255, 0)
+        vibrator?.vibrate(VibrationEffect.createWaveform(timings, amplitudes, 0))
+    }
+
     override fun onCleared() {
         super.onCleared()
+        vibrator?.cancel()
         ringtoneFallbackManager.stop()
         RadioPlayerManager.stop(getApplication())
     }
