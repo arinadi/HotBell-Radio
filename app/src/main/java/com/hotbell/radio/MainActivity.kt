@@ -13,6 +13,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import com.hotbell.radio.ui.alarm.AlarmEditScreen
 import com.hotbell.radio.ui.alarm.AlarmEditViewModel
 import com.hotbell.radio.ui.home.HomeScreen
@@ -97,12 +100,18 @@ class MainActivity : ComponentActivity() {
 
                             // Receive station selection result
                             val savedStateHandle = backStackEntry.savedStateHandle
-                            val selectedUuid = savedStateHandle.get<String>("selected_station_uuid")
-                            val selectedName = savedStateHandle.get<String>("selected_station_name")
-                            if (selectedUuid != null && selectedName != null) {
-                                alarmEditViewModel.setStation(selectedUuid, selectedName)
-                                savedStateHandle.remove<String>("selected_station_uuid")
-                                savedStateHandle.remove<String>("selected_station_name")
+                            val selectedUuidResult = savedStateHandle.getStateFlow<String?>("selected_station_uuid", null)
+                            val selectedNameResult = savedStateHandle.getStateFlow<String?>("selected_station_name", null)
+
+                            val selectedUuid by selectedUuidResult.collectAsState()
+                            val selectedName by selectedNameResult.collectAsState()
+
+                            LaunchedEffect(selectedUuid, selectedName) {
+                                if (selectedUuid != null && selectedName != null) {
+                                    alarmEditViewModel.setStation(selectedUuid!!, selectedName!!)
+                                    savedStateHandle.remove<String>("selected_station_uuid")
+                                    savedStateHandle.remove<String>("selected_station_name")
+                                }
                             }
 
                             AlarmEditScreen(
