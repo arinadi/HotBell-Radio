@@ -45,7 +45,26 @@ import com.hotbell.radio.ui.theme.ElectricBlue
 import com.hotbell.radio.ui.theme.NeonRed
 import com.hotbell.radio.ui.theme.PitchBlack
 import com.hotbell.radio.ui.theme.DarkGray
+import androidx.compose.ui.graphics.Color
 
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
@@ -54,62 +73,110 @@ fun HomeScreen(
     onExploreRadio: () -> Unit
 ) {
     val alarms by viewModel.alarms.collectAsState()
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
-    Scaffold(
-        containerColor = PitchBlack,
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddAlarm,
-                containerColor = NeonRed,
-                shape = CircleShape
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet(
+                drawerContainerColor = PitchBlack
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Alarm", tint = PitchBlack)
+                Spacer(modifier = Modifier.height(32.dp))
+                Text(
+                    "HotBell Menu",
+                    color = NeonRed,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(16.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                NavigationDrawerItem(
+                    label = { Text("Setup Permissions", color = Color.White) },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            val intent = Intent().apply {
+                                action = Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
+                                data = Uri.fromParts("package", context.packageName, null)
+                            }
+                            context.startActivity(intent)
+                        }
+                    },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
             }
         }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp, vertical = 24.dp)
-        ) {
-            Text(
-                text = "HotBell Radio",
-                color = ElectricBlue,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            TextButton(onClick = onExploreRadio) {
-                Text("🎵 Explore Radio", color = ElectricBlue, fontSize = 14.sp)
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            if (alarms.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No alarms yet.\nTap + to add one.",
-                        color = DarkGray,
-                        fontSize = 16.sp
-                    )
-                }
-            } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(alarms, key = { it.id }) { alarm ->
-                        AlarmCard(
-                            alarm = alarm,
-                            onToggle = { viewModel.toggleAlarm(alarm) },
-                            onEdit = { onEditAlarm(alarm.id) },
-                            onDelete = { viewModel.deleteAlarm(alarm) }
+    ) {
+        Scaffold(
+            containerColor = PitchBlack,
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = "HotBell Radio",
+                            color = ElectricBlue,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold
                         )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = ElectricBlue)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = PitchBlack)
+                )
+            },
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = onAddAlarm,
+                    containerColor = NeonRed,
+                    shape = CircleShape
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Alarm", tint = PitchBlack)
+                }
+            }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 16.dp)
+            ) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                TextButton(onClick = onExploreRadio) {
+                    Text("🎵 Explore Radio", color = ElectricBlue, fontSize = 14.sp)
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (alarms.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No alarms yet.\nTap + to add one.",
+                            color = DarkGray,
+                            fontSize = 16.sp
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(alarms, key = { it.id }) { alarm ->
+                            AlarmCard(
+                                alarm = alarm,
+                                onToggle = { viewModel.toggleAlarm(alarm) },
+                                onEdit = { onEditAlarm(alarm.id) },
+                                onDelete = { viewModel.deleteAlarm(alarm) }
+                            )
+                        }
                     }
                 }
             }
