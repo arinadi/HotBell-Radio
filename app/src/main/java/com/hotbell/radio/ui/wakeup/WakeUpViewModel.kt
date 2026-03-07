@@ -40,19 +40,30 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun startAlarm(stationUrl: String?, stationName: String?) {
-        if (stationUrl == null || !hasInternetConnection()) {
-            startFallback()
-            return
-        }
-
-        RadioPlayerManager.play(getApplication(), stationUrl, stationName ?: "Alarm Station")
-
-        // Wait 3 seconds, if not playing, start fallback
-        fallbackTimeoutJob = viewModelScope.launch {
-            delay(3000)
-            if (RadioPlayerManager.playbackState.value !is PlaybackState.Playing) {
+    fun startAlarm(stationUuid: String?, stationName: String?) {
+        viewModelScope.launch {
+            if (stationUuid == null || !hasInternetConnection()) {
                 startFallback()
+                return@launch
+            }
+
+            // Fetch latest URL from DB directly before playing
+            val db = com.hotbell.radio.data.AppDatabase.getInstance(getApplication())
+            val stationUrl = db.favoriteStationDao().getByUuid(stationUuid)?.urlResolved
+
+            if (stationUrl == null) {
+                startFallback()
+                return@launch
+            }
+
+            RadioPlayerManager.play(getApplication(), stationUrl, stationName ?: "Alarm Station")
+
+            // Wait 3 seconds, if not playing, start fallback
+            fallbackTimeoutJob = viewModelScope.launch {
+                delay(3000)
+                if (RadioPlayerManager.playbackState.value !is PlaybackState.Playing) {
+                    startFallback()
+                }
             }
         }
     }

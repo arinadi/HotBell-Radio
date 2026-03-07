@@ -22,7 +22,7 @@ class WakeUpActivity : ComponentActivity() {
         setupLockScreenBypass()
         turnScreenOnAndKeyguardOff()
 
-        val stationUrl = intent.getStringExtra("EXTRA_STATION_URL")
+        val stationUuid = intent.getStringExtra("EXTRA_STATION_UUID")
         val stationName = intent.getStringExtra("EXTRA_STATION_NAME")
 
         setContent {
@@ -30,7 +30,7 @@ class WakeUpActivity : ComponentActivity() {
             
             // Trigger playback on launch
             androidx.compose.runtime.LaunchedEffect(Unit) {
-                viewModel.startAlarm(stationUrl, stationName)
+                viewModel.startAlarm(stationUuid, stationName)
             }
 
             HotBellTheme {

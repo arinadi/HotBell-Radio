@@ -42,13 +42,13 @@ class AlarmScheduler(private val context: Context) {
     }
 
     private fun createPendingIntent(alarm: AlarmEntity): PendingIntent {
-        val intent = Intent(context, AlarmReceiver::class.java).apply {
-            action = "com.hotbell.radio.ALARM_TRIGGER"
-            putExtra("ALARM_ID", alarm.id)
-            putExtra("STATION_UUID", alarm.stationUuid)
-            putExtra("STATION_NAME", alarm.stationName)
+        val intent = Intent(context, com.hotbell.radio.ui.wakeup.WakeUpActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra("EXTRA_ALARM_ID", alarm.id)
+            putExtra("EXTRA_STATION_UUID", alarm.stationUuid)
+            putExtra("EXTRA_STATION_NAME", alarm.stationName)
         }
-        return PendingIntent.getBroadcast(
+        return PendingIntent.getActivity(
             context,
             alarm.id.hashCode(),
             intent,
