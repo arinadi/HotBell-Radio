@@ -7,15 +7,7 @@
   * Empty `MainActivity.kt`.
   * Base `HotBellApp.kt` application class.
   * Initial Room Schema (`AlarmEntity.kt`, `FavoriteStationEntity.kt`, `AppDatabase.kt`).
-* **Dependencies Added:**
-  * Jetpack Compose (BOM 2024.02.00)
-  * Room 2.6.1 + KSP
-  * Retrofit 2.11.0
-  * ExoPlayer (Media3) 1.3.0
-* **Self-Reflection:**
-  * **Security Risks:** None introduced. Manifest allows internet properly.
-  * **Code Duplication:** None yet, this is the base module.
-  * **Performance/Other:** Upgraded Android Gradle Plugin to 8.3.0 to support JDK 21.
+* **Dependencies Added:** Compose BOM, Room 2.6.1 + KSP, Retrofit 2.11.0, ExoPlayer (Media3) 1.3.0.
 
 ## Module 1: Radio Integration
 * **Completed:** Full Radio Browser API integration and background audio playback via Media3.
@@ -27,9 +19,23 @@
   * `PlaybackState.kt` — Sealed class (Idle, Buffering, Playing, Error).
   * `RadioPlaybackService.kt` — MediaSessionService with ExoPlayer, foreground notification.
   * `RadioPlayerManager.kt` — Clean singleton wrapper for playback control.
-  * `ic_radio.xml` — Notification icon drawable.
-* **Manifest Updates:** Added `usesCleartextTraffic`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, registered `RadioPlaybackService`.
+
+## Module 2: Alarm Management
+* **Completed:** Room DAO CRUD, AlarmManager scheduling, Boot/Alarm receivers.
+* **Components Built:**
+  * `AlarmDao.kt` — Room DAO with CRUD + Flow + getEnabled().
+  * `AlarmScheduler.kt` — Wraps AlarmManager.setAlarmClock() with day-of-week bitmask calculation.
+  * `AlarmReceiver.kt` — BroadcastReceiver launching WakeUpActivity on trigger.
+  * `BootReceiver.kt` — Reschedules all enabled alarms on boot.
+  * `AlarmRepository.kt` — Combines DAO + Scheduler for unified operations.
+  * Updated `AppDatabase.kt` with singleton pattern and `alarmDao()`.
+* **Manifest Updates:** Added `RECEIVE_BOOT_COMPLETED`, registered `AlarmReceiver` and `BootReceiver`.
 * **Self-Reflection:**
-  * **Security Risks:** Input sanitization applied to search queries (trimmed, length-capped).
-  * **Code Duplication:** None from Module 0.
-  * **Performance:** ExoPlayer streaming tested successfully. Buffering transitions are smooth. Network errors correctly surface via StateFlow.
+  * **Security Risks:** None. Receivers are not exported (except BootReceiver for system intent).
+  * **Code Duplication:** None from Module 0/1.
+  * **Performance:** `setAlarmClock()` used for maximum reliability against Doze mode.
+
+## Mid-Project Health Check (After Module 2)
+* **Room DB Structure:** ✅ Correct. `AlarmEntity` and `FavoriteStationEntity` properly defined. `AlarmDao` provides full CRUD + Flow observation. Singleton pattern on `AppDatabase` ensures single instance.
+* **Background Execution:** ✅ `AlarmManager.setAlarmClock()` chosen over `setExactAndAllowWhileIdle()` for guaranteed alarm delivery. `BootReceiver` reschedules on reboot. `RadioPlaybackService` runs as foreground media service.
+* **Suggested Refactors:** None needed at this point. Architecture is clean and modular.
