@@ -1,0 +1,83 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Decode Keystore
+        env:
+          SIGNING_KEY_STORE_BASE64: ${{ secrets.SIGNING_KEY_STORE_BASE64 }}
+        run: |
+          if [ ! -z "$SIGNING_KEY_STORE_BASE64" ]; then
+            echo "$SIGNING_KEY_STORE_BASE64" | base64 --decode > app/release.jks
+          fi
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build Release and Debug APKs
+        env:
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease assembleDebug
+
+      - name: Calculate Version
+        id: version
+        run: |
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+          VERSION_NAME="1.$COMMIT_COUNT.$COMMIT_HASH"
+          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "Computed Version: $VERSION_NAME"
+
+      - name: Upload APK Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: HotBell-Radio-v${{ steps.version.outputs.VERSION_NAME }}
+          path: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/apk/debug/*.apk
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/apk/debug/*.apk
+          tag_name: v${{ steps.version.outputs.VERSION_NAME }}
+          name: Release v${{ steps.version.outputs.VERSION_NAME }}
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

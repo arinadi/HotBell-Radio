@@ -12,8 +12,31 @@ android {
         applicationId = "com.hotbell.radio"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        
+        // Git-based Versioning
+        fun getGitCommitCount(): Int {
+            return try {
+                val process = ProcessBuilder("git", "rev-list", "--count", "HEAD").start()
+                process.inputStream.bufferedReader().readText().trim().toInt()
+            } catch (e: Exception) {
+                1 // Fallback
+            }
+        }
+
+        fun getGitCommitHash(): String {
+            return try {
+                val process = ProcessBuilder("git", "rev-parse", "--short", "HEAD").start()
+                process.inputStream.bufferedReader().readText().trim()
+            } catch (e: Exception) {
+                "unknown"
+            }
+        }
+
+        val commitCount = getGitCommitCount()
+        val commitHash = getGitCommitHash()
+
+        versionCode = commitCount
+        versionName = "1.$commitCount.$commitHash"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -21,18 +44,38 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("release.jks")
+            storePassword = System.getenv("SIGNING_STORE_PASSWORD") ?: "123456"
+            keyAlias = System.getenv("SIGNING_KEY_ALIAS") ?: "key"
+            keyPassword = System.getenv("SIGNING_KEY_PASSWORD") ?: "123456"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = "21"
+    }
+
+    applicationVariants.all {
+        val variant = this
+        variant.outputs
+            .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
+            .forEach { output ->
+                output.outputFileName = "HotBell-Radio-${variant.versionName}-${variant.name}.apk"
+            }
     }
     buildFeatures {
         compose = true
