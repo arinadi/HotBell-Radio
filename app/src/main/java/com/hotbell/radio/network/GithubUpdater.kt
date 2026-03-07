@@ -106,17 +106,15 @@ class GithubUpdater(private val context: Context) {
 
     private fun installApk(file: File) {
         try {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                if (!context.packageManager.canRequestPackageInstalls()) {
-                    Log.w("GithubUpdater", "Requesting install permission")
-                    Toast.makeText(context, "Please allow 'Install unknown apps' permission", Toast.LENGTH_LONG).show()
-                    
-                    val intent = Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
-                    intent.data = Uri.parse("package:${context.packageName}")
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(intent)
-                    return
-                }
+            if (!context.packageManager.canRequestPackageInstalls()) {
+                Log.w("GithubUpdater", "Requesting install permission")
+                Toast.makeText(context, "Please allow 'Install unknown apps' permission", Toast.LENGTH_LONG).show()
+                
+                val intent = Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
+                intent.data = Uri.parse("package:${context.packageName}")
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+                return
             }
 
             val uri = FileProvider.getUriForFile(

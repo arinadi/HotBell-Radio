@@ -16,11 +16,7 @@ object RadioPlayerManager {
             putExtra("STATION_NAME", stationName)
         }
         try {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
-            }
+            context.startForegroundService(intent)
         } catch (e: Exception) {
             // Catches ForegroundServiceStartNotAllowedException on Android 12+ or SecurityException
             android.util.Log.e("RadioPlayerManager", "Failed to start foreground service", e)

@@ -77,7 +77,7 @@ fun WakeUpScreen(
     val challenge by viewModel.challenge.collectAsState()
     val isFallbackActive by viewModel.isFallbackActive.collectAsState()
     val context = LocalContext.current
-    var currentTime by remember { mutableStateOf(System.currentTimeMillis()) }
+    var currentTime by remember { androidx.compose.runtime.mutableLongStateOf(System.currentTimeMillis()) }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -423,21 +423,12 @@ private fun vibrateDevice(context: Context, isError: Boolean = false) {
         context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
     }
     
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        if (isError) {
-            val amplitudes = intArrayOf(0, 255, 0, 255, 0, 255, 0, 255)
-            val timings = longArrayOf(0, 400, 100, 400, 100, 400, 100, 1500)
-            vibrator.vibrate(VibrationEffect.createWaveform(timings, amplitudes, -1))
-        } else {
-            vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
-        }
+    if (isError) {
+        val amplitudes = intArrayOf(0, 255, 0, 255, 0, 255, 0, 255)
+        val timings = longArrayOf(0, 400, 100, 400, 100, 400, 100, 1500)
+        vibrator.vibrate(VibrationEffect.createWaveform(timings, amplitudes, -1))
     } else {
-        @Suppress("DEPRECATION")
-        if (isError) {
-            vibrator.vibrate(longArrayOf(0, 400, 100, 400, 100, 400, 100, 1500), -1)
-        } else {
-             vibrator.vibrate(200)
-        }
+        vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
     }
 }
 

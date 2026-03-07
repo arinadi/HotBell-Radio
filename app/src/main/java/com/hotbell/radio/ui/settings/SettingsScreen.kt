@@ -163,9 +163,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         } else true
 
         val powerManager = context.getSystemService(android.content.Context.POWER_SERVICE) as? android.os.PowerManager
-        val isIgnoringBatteryOptimizations = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            powerManager?.isIgnoringBatteryOptimizations(context.packageName) == true
-        } else true
+        val isIgnoringBatteryOptimizations = powerManager?.isIgnoringBatteryOptimizations(context.packageName) == true
 
         val canUseFullScreenIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             notificationManager?.canUseFullScreenIntent() == true
@@ -211,18 +209,11 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                     title = "Battery Optimization",
                     isGranted = isIgnoringBatteryOptimizations,
                     onClick = {
-                        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                            Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                                data = Uri.parse("package:${context.packageName}")
-                            }
-                        } else null
+                        val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
                         
                         try {
-                            intent?.let { context.startActivity(it) }
-                        } catch (e: Exception) {
-                            val fallbackIntent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-                            try { context.startActivity(fallbackIntent) } catch (e2: Exception) {}
-                        }
+                            context.startActivity(intent)
+                        } catch (e: Exception) {}
                     }
                 )
 

@@ -62,12 +62,6 @@
             </intent-filter>
         </service>
 
-        <!-- FIX: AlarmService — mencegah sistem kill proses sebelum getar/animasi berjalan -->
-        <service
-            android:name=".alarms.AlarmService"
-            android:exported="false"
-            android:foregroundServiceType="mediaPlayback" />
-
         <!-- FIX: AlarmReceiver exported=true agar AlarmManager bisa kirim intent di Android 12+ -->
         <receiver
             android:name=".alarms.AlarmReceiver"

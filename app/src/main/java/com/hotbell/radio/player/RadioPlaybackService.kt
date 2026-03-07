@@ -206,19 +206,18 @@ class RadioPlaybackService : MediaSessionService() {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Radio Playback",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "Shows when radio is playing"
-            }
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "Radio Playback",
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "Shows when radio is playing"
         }
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(channel)
     }
 
+    @OptIn(UnstableApi::class)
     private fun startVolumeCrescendo() {
         fadeJob?.cancel()
         loudnessEnhancer?.release()
