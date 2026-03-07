@@ -248,7 +248,6 @@ fun WakeUpScreen(
                     ChallengeButton(
                         text = challenge.options[0].toString(),
                         isCorrect = challenge.correctIndex == 0,
-                        context = context,
                         baseColor = colors[0],
                         modifier = Modifier.weight(1f),
                         onSuccess = { 
@@ -263,7 +262,6 @@ fun WakeUpScreen(
                     ChallengeButton(
                         text = challenge.options[1].toString(),
                         isCorrect = challenge.correctIndex == 1,
-                        context = context,
                         baseColor = colors[1],
                         modifier = Modifier.weight(1f),
                         onSuccess = { 
@@ -283,7 +281,6 @@ fun WakeUpScreen(
                     ChallengeButton(
                         text = challenge.options[2].toString(),
                         isCorrect = challenge.correctIndex == 2,
-                        context = context,
                         baseColor = colors[2],
                         modifier = Modifier.weight(1f),
                         onSuccess = { 
@@ -298,7 +295,6 @@ fun WakeUpScreen(
                     ChallengeButton(
                         text = challenge.options[3].toString(),
                         isCorrect = challenge.correctIndex == 3,
-                        context = context,
                         baseColor = colors[3],
                         modifier = Modifier.weight(1f),
                         onSuccess = { 
@@ -320,7 +316,6 @@ fun WakeUpScreen(
 private fun ChallengeButton(
     text: String,
     isCorrect: Boolean,
-    context: Context,
     baseColor: Color,
     modifier: Modifier = Modifier,
     onSuccess: () -> Unit,

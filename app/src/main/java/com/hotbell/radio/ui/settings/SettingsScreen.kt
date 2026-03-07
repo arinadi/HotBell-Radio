@@ -17,7 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hotbell.radio.R
 import com.hotbell.radio.ui.theme.DarkGray
@@ -361,7 +361,7 @@ private fun PermissionRow(title: String, isGranted: Boolean, onClick: () -> Unit
         }
         if (!isGranted) {
             Icon(
-                imageVector = androidx.compose.material.icons.Icons.Default.KeyboardArrowRight,
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
                 tint = Color.Gray
             )

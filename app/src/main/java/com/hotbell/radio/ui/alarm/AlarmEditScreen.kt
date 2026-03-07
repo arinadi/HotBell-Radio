@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -250,32 +251,32 @@ fun AlarmEditScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                            imageVector = Icons.Default.Notifications,
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = null,
+                                tint = HotBellOrange,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stationName ?: "Select Stream",
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "WAKE UP STREAM",
+                                color = DarkGray,
+                                fontSize = 12.sp
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                             contentDescription = null,
-                            tint = HotBellOrange,
-                            modifier = Modifier.size(20.dp)
+                            tint = Color.Gray
                         )
                     }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stationName ?: "Select Stream",
-                            color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "WAKE UP STREAM",
-                            color = DarkGray,
-                            fontSize = 12.sp
-                        )
-                    }
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowRight,
-                        contentDescription = null,
-                        tint = DarkGray
-                    )
-                }
 
                     androidx.compose.material3.HorizontalDivider(
                         color = Color.White.copy(alpha = 0.05f),

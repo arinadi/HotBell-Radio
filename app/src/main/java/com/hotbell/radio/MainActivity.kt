@@ -99,9 +99,6 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onEditAlarm = { alarmId ->
                                     navController.navigate(Route.AlarmEdit.create(alarmId))
-                                },
-                                onExploreRadio = {
-                                    navController.navigate(Route.RadioExplorer.create("general"))
                                 }
                             )
                         }

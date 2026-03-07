@@ -80,11 +80,9 @@ import androidx.core.content.ContextCompat
 fun HomeScreen(
     viewModel: HomeViewModel,
     onAddAlarm: () -> Unit,
-    onEditAlarm: (String) -> Unit,
-    onExploreRadio: () -> Unit
+    onEditAlarm: (String) -> Unit
 ) {
     val alarms by viewModel.alarms.collectAsState()
-    val favorites by viewModel.favorites.collectAsState()
     val countdowns by viewModel.alarmCountdowns.collectAsState()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -164,7 +162,7 @@ fun HomeScreen(
                             )
                         }
                         
-                        val nextAlarmStr = countdowns.values.firstOrNull { it != null } ?: "No active alarms"
+                        val nextAlarmStr = countdowns.values.firstOrNull() ?: "No active alarms"
                         Text(
                             text = if (nextAlarmStr == "No active alarms") nextAlarmStr else "Next alarm in $nextAlarmStr",
                             color = Color.Gray,

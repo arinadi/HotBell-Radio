@@ -10,10 +10,10 @@ data class MathChallenge(
 
 object MathChallengeGenerator {
     fun generate(): MathChallenge {
-        var a = 0
-        var b = 0
-        var answer = 0
-        var symbol = ""
+        var a: Int
+        var b: Int
+        var answer: Int
+        var symbol: String
         
         do {
             val type = Random.nextInt(3) // 0: add, 1: sub, 2: mul
