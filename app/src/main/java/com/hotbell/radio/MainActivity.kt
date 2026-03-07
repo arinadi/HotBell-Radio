@@ -78,6 +78,7 @@ class MainActivity : ComponentActivity() {
                                     navController.previousBackStackEntry
                                         ?.savedStateHandle
                                         ?.set("selected_station_name", station.name)
+                                    com.hotbell.radio.player.RadioPlayerManager.stop(applicationContext)
                                     navController.popBackStack()
                                 },
                                 onBack = { navController.popBackStack() }
