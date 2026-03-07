@@ -70,11 +70,18 @@ class AlarmScheduler(private val context: Context) {
             set(Calendar.MILLISECOND, 0)
         }
 
+        // Drop seconds/millis from 'now' to allow setting an alarm for the current minute without skipping to tomorrow
+        val nowMinute = Calendar.getInstance().apply {
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
         if (daysOfWeek == 0) {
-            // One-time alarm: if time already passed today, set for tomorrow
-            if (alarm.before(now) || alarm == now) {
+            // One-time alarm: if time already passed today (comparing only up to minute precision), set for tomorrow
+            if (alarm.before(nowMinute)) {
                 alarm.add(Calendar.DAY_OF_MONTH, 1)
             }
+            Log.d(TAG, "Calculated one-time alarm for timeInMillis: ${alarm.timeInMillis}")
             return alarm.timeInMillis
         }
 
@@ -88,13 +95,15 @@ class AlarmScheduler(private val context: Context) {
             // Our bitmask: bit 0=Sunday, bit 1=Monday, ..., bit 6=Saturday
             val dayBit = candidate.get(Calendar.DAY_OF_WEEK) - 1
             if (daysOfWeek and (1 shl dayBit) != 0) {
-                if (i == 0 && candidate.before(now)) continue
+                if (i == 0 && candidate.before(nowMinute)) continue
+                Log.d(TAG, "Calculated repeating alarm for timeInMillis: ${candidate.timeInMillis}")
                 return candidate.timeInMillis
             }
         }
 
         // Fallback: set for tomorrow
         alarm.add(Calendar.DAY_OF_MONTH, 1)
+        Log.d(TAG, "Calculated fallback alarm for timeInMillis: ${alarm.timeInMillis}")
         return alarm.timeInMillis
     }
 }
