@@ -1,46 +1,29 @@
 package com.hotbell.radio
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.hotbell.radio.network.RadioRepository
-import com.hotbell.radio.player.PlaybackState
-import com.hotbell.radio.player.RadioPlayerManager
-import com.hotbell.radio.ui.theme.ElectricBlue
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.hotbell.radio.ui.alarm.AlarmEditScreen
+import com.hotbell.radio.ui.alarm.AlarmEditViewModel
+import com.hotbell.radio.ui.home.HomeScreen
+import com.hotbell.radio.ui.home.HomeViewModel
+import com.hotbell.radio.ui.navigation.Route
+import com.hotbell.radio.ui.radio.RadioExplorerScreen
+import com.hotbell.radio.ui.radio.RadioViewModel
 import com.hotbell.radio.ui.theme.HotBellTheme
-import com.hotbell.radio.ui.theme.NeonRed
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.hotbell.radio.ui.theme.PitchBlack
 
 class MainActivity : ComponentActivity() {
-
-    private val repository = RadioRepository()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,124 +31,95 @@ class MainActivity : ComponentActivity() {
             HotBellTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = PitchBlack
                 ) {
-                    RadioTestScreen()
-                }
-            }
-        }
-    }
+                    val navController = rememberNavController()
+                    val radioViewModel: RadioViewModel = viewModel()
 
-    @Composable
-    fun RadioTestScreen() {
-        val playbackState by RadioPlayerManager.playbackState.collectAsState()
-        var statusText by remember { mutableStateOf("Ready to test") }
+                    NavHost(
+                        navController = navController,
+                        startDestination = Route.Home.route
+                    ) {
+                        // Home Screen
+                        composable(Route.Home.route) {
+                            val homeViewModel: HomeViewModel = viewModel()
+                            HomeScreen(
+                                viewModel = homeViewModel,
+                                onAddAlarm = {
+                                    navController.navigate(Route.AlarmEdit.create())
+                                },
+                                onEditAlarm = { alarmId ->
+                                    navController.navigate(Route.AlarmEdit.create(alarmId))
+                                },
+                                onExploreRadio = {
+                                    navController.navigate(Route.RadioExplorer.create("general"))
+                                }
+                            )
+                        }
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "HotBell Radio",
-                color = ElectricBlue,
-                fontSize = 32.sp
-            )
+                        // Radio Explorer Screen
+                        composable(
+                            Route.RadioExplorer.route,
+                            arguments = listOf(navArgument("mode") { defaultValue = "general" })
+                        ) { backStackEntry ->
+                            val mode = backStackEntry.arguments?.getString("mode") ?: "general"
+                            val isSelectMode = mode == "select"
 
-            Spacer(modifier = Modifier.height(16.dp))
+                            RadioExplorerScreen(
+                                viewModel = radioViewModel,
+                                isSelectMode = isSelectMode,
+                                onStationSelected = { station ->
+                                    navController.previousBackStackEntry
+                                        ?.savedStateHandle
+                                        ?.set("selected_station_uuid", station.stationUuid)
+                                    navController.previousBackStackEntry
+                                        ?.savedStateHandle
+                                        ?.set("selected_station_name", station.name)
+                                    navController.popBackStack()
+                                },
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
 
-            Text(
-                text = "Player: ${playbackState.toDisplayString()}",
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 16.sp
-            )
+                        // Alarm Edit Screen
+                        composable(
+                            Route.AlarmEdit.route,
+                            arguments = listOf(
+                                navArgument("alarmId") {
+                                    type = NavType.StringType
+                                    nullable = true
+                                    defaultValue = null
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val alarmId = backStackEntry.arguments?.getString("alarmId")
+                            val alarmEditViewModel: AlarmEditViewModel = viewModel()
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = statusText,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 14.sp
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Button(
-                onClick = {
-                    statusText = "Searching jazz stations..."
-                    CoroutineScope(Dispatchers.IO).launch {
-                        try {
-                            val stations = repository.searchStations(name = "jazz")
-                            val msg = "Found ${stations.size} stations"
-                            Log.d("RadioTest", msg)
-                            stations.take(3).forEach {
-                                Log.d("RadioTest", "  - ${it.name} (${it.urlResolved})")
+                            // Receive station selection result
+                            val savedStateHandle = backStackEntry.savedStateHandle
+                            val selectedUuid = savedStateHandle.get<String>("selected_station_uuid")
+                            val selectedName = savedStateHandle.get<String>("selected_station_name")
+                            if (selectedUuid != null && selectedName != null) {
+                                alarmEditViewModel.setStation(selectedUuid, selectedName)
+                                savedStateHandle.remove<String>("selected_station_uuid")
+                                savedStateHandle.remove<String>("selected_station_name")
                             }
-                            statusText = msg
-                            if (stations.isNotEmpty()) {
-                                val first = stations.first()
-                                statusText = "$msg\nPlaying: ${first.name}"
-                                RadioPlayerManager.play(
-                                    this@MainActivity,
-                                    first.urlResolved,
-                                    first.name
-                                )
-                            }
-                        } catch (e: Exception) {
-                            Log.e("RadioTest", "Error: ${e.message}")
-                            statusText = "Error: ${e.message}"
+
+                            AlarmEditScreen(
+                                viewModel = alarmEditViewModel,
+                                alarmId = alarmId,
+                                onSelectStation = {
+                                    navController.navigate(Route.RadioExplorer.create("select"))
+                                },
+                                onDone = {
+                                    navController.popBackStack(Route.Home.route, false)
+                                },
+                                onBack = { navController.popBackStack() }
+                            )
                         }
                     }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = NeonRed),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Search & Play Jazz", fontSize = 16.sp)
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Button(
-                    onClick = {
-                        RadioPlayerManager.stop(this@MainActivity)
-                        statusText = "Stopped"
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = ElectricBlue),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Stop")
-                }
-
-                Button(
-                    onClick = {
-                        statusText = "Testing invalid URL..."
-                        RadioPlayerManager.play(
-                            this@MainActivity,
-                            "http://invalid.stream.url/test",
-                            "Invalid Test"
-                        )
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Test Error")
                 }
             }
-        }
-    }
-
-    private fun PlaybackState.toDisplayString(): String {
-        return when (this) {
-            is PlaybackState.Idle -> "Idle"
-            is PlaybackState.Buffering -> "Buffering..."
-            is PlaybackState.Playing -> "Playing: $stationName"
-            is PlaybackState.Error -> "Error: $message"
         }
     }
 }
