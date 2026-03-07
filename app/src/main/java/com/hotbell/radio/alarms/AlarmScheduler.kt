@@ -26,12 +26,17 @@ class AlarmScheduler(private val context: Context) {
         val triggerTime = calculateNextTriggerTime(alarm.timeHour, alarm.timeMin, alarm.daysOfWeek)
         val pendingIntent = createPendingIntent(alarm)
 
-        alarmManager.setAlarmClock(
-            AlarmManager.AlarmClockInfo(triggerTime, pendingIntent),
-            pendingIntent
-        )
-
-        Log.d(TAG, "Scheduled alarm ${alarm.id} for ${alarm.timeHour}:${String.format("%02d", alarm.timeMin)} (trigger: $triggerTime)")
+        try {
+            alarmManager.setAlarmClock(
+                AlarmManager.AlarmClockInfo(triggerTime, pendingIntent),
+                pendingIntent
+            )
+            Log.d(TAG, "Scheduled alarm ${alarm.id} for ${alarm.timeHour}:${String.format("%02d", alarm.timeMin)} (trigger: $triggerTime)")
+        } catch (e: SecurityException) {
+            Log.e(TAG, "Failed to schedule exact alarm. Missing SCHEDULE_EXACT_ALARM permission.", e)
+            // Ideally, we should notify the UI to prompt the user to grant this permission in settings.
+            // For now, we fallback to a non-exact alarm if possible, or just fail gracefully.
+        }
     }
 
     fun cancel(alarm: AlarmEntity) {

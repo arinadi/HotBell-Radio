@@ -1,6 +1,10 @@
 package com.hotbell.radio
 
 import android.os.Bundle
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,11 +29,16 @@ import com.hotbell.radio.ui.radio.RadioExplorerScreen
 import com.hotbell.radio.ui.radio.RadioViewModel
 import com.hotbell.radio.ui.theme.HotBellTheme
 import com.hotbell.radio.ui.theme.PitchBlack
+import android.app.AlarmManager
+import android.content.Context
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        checkExactAlarmPermission()
+
         setContent {
             HotBellTheme {
                 Surface(
@@ -129,6 +138,19 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private fun checkExactAlarmPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            if (!alarmManager.canScheduleExactAlarms()) {
+                val intent = Intent().apply {
+                    action = Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
+                    data = Uri.fromParts("package", packageName, null)
+                }
+                startActivity(intent)
             }
         }
     }
