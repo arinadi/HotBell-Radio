@@ -77,6 +77,8 @@ fun WakeUpScreen(
     val challenge by viewModel.challenge.collectAsState()
     val isFallbackActive by viewModel.isFallbackActive.collectAsState()
     val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("hotbell_prefs", android.content.Context.MODE_PRIVATE) }
+    val holdDurationMs = remember { prefs.getInt("alarm_dismiss_hold_sec", 3) * 1000 }
     var currentTime by remember { androidx.compose.runtime.mutableLongStateOf(System.currentTimeMillis()) }
 
     LaunchedEffect(Unit) {
@@ -249,6 +251,7 @@ fun WakeUpScreen(
                         text = challenge.options[0].toString(),
                         isCorrect = challenge.correctIndex == 0,
                         baseColor = colors[0],
+                        holdDurationMs = holdDurationMs,
                         modifier = Modifier.weight(1f),
                         onSuccess = { 
                             handleSuccess(coroutineScope) { flashColor = it }
@@ -263,6 +266,7 @@ fun WakeUpScreen(
                         text = challenge.options[1].toString(),
                         isCorrect = challenge.correctIndex == 1,
                         baseColor = colors[1],
+                        holdDurationMs = holdDurationMs,
                         modifier = Modifier.weight(1f),
                         onSuccess = { 
                             handleSuccess(coroutineScope) { flashColor = it }
@@ -282,6 +286,7 @@ fun WakeUpScreen(
                         text = challenge.options[2].toString(),
                         isCorrect = challenge.correctIndex == 2,
                         baseColor = colors[2],
+                        holdDurationMs = holdDurationMs,
                         modifier = Modifier.weight(1f),
                         onSuccess = { 
                             handleSuccess(coroutineScope) { flashColor = it }
@@ -296,6 +301,7 @@ fun WakeUpScreen(
                         text = challenge.options[3].toString(),
                         isCorrect = challenge.correctIndex == 3,
                         baseColor = colors[3],
+                        holdDurationMs = holdDurationMs,
                         modifier = Modifier.weight(1f),
                         onSuccess = { 
                             handleSuccess(coroutineScope) { flashColor = it }
@@ -317,6 +323,7 @@ private fun ChallengeButton(
     text: String,
     isCorrect: Boolean,
     baseColor: Color,
+    holdDurationMs: Int = 3000,
     modifier: Modifier = Modifier,
     onSuccess: () -> Unit,
     onFail: () -> Unit
@@ -340,7 +347,7 @@ private fun ChallengeButton(
                                 val job = coroutineScope.launch {
                                     progressAnim.animateTo(
                                         targetValue = 1f,
-                                        animationSpec = tween(durationMillis = 3000, easing = LinearEasing)
+                                        animationSpec = tween(durationMillis = holdDurationMs, easing = LinearEasing)
                                     )
                                     if (progressAnim.value == 1f) {
                                         onSuccess()

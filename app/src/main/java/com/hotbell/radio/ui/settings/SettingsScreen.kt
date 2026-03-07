@@ -40,7 +40,10 @@ import android.app.NotificationManager
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
     val vibrateOnWake by viewModel.vibrateOnWake.collectAsState()
-    val streamQuality by viewModel.streamQuality.collectAsState()
+    val startVolume by viewModel.startVolume.collectAsState()
+    val maxBoost by viewModel.maxBoost.collectAsState()
+    val crescendoSec by viewModel.crescendoSec.collectAsState()
+    val dismissHoldSec by viewModel.dismissHoldSec.collectAsState()
     val scrollState = rememberScrollState()
 
     Column(
@@ -58,9 +61,9 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
             modifier = Modifier.padding(bottom = 24.dp, top = 16.dp)
         )
 
-        // Preferences Section
+        // Alarm Configuration Section
         Text(
-            text = "Preferences",
+            text = "Alarm Configuration",
             color = HotBellOrange,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
@@ -73,6 +76,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
+                // Vibrate on Wake
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -91,51 +95,46 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(color = Color.White.copy(alpha = 0.05f), modifier = Modifier.padding(vertical = 12.dp))
 
-                var expanded by remember { mutableStateOf(false) }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Stream Quality", color = Color.White, fontSize = 16.sp)
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = it }
-                    ) {
-                        OutlinedTextField(
-                            value = streamQuality,
-                            onValueChange = {},
-                            readOnly = true,
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = HotBellOrange,
-                                unfocusedBorderColor = Color.Gray
-                            ),
-                            modifier = Modifier
-                                .menuAnchor()
-                                .width(140.dp)
-                        )
-                        ExposedDropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false },
-                            modifier = Modifier.background(DarkGray)
-                        ) {
-                            listOf("Low", "Normal", "High").forEach { selectionOption ->
-                                DropdownMenuItem(
-                                    text = { Text(selectionOption, color = Color.White) },
-                                    onClick = {
-                                        viewModel.setStreamQuality(selectionOption)
-                                        expanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
+                // Start Volume
+                ConfigSlider(
+                    label = "Start Volume",
+                    value = startVolume,
+                    valueRange = 5f..50f,
+                    suffix = "%",
+                    onValueChange = { viewModel.setStartVolume(it) }
+                )
+
+                // Max Volume Boost
+                ConfigSlider(
+                    label = "Max Volume Boost",
+                    value = maxBoost,
+                    valueRange = 100f..200f,
+                    suffix = "%",
+                    steps = 9,
+                    onValueChange = { viewModel.setMaxBoost(it) }
+                )
+
+                // Crescendo Duration
+                ConfigSlider(
+                    label = "Crescendo Duration",
+                    value = crescendoSec,
+                    valueRange = 15f..120f,
+                    suffix = "s",
+                    steps = 6,
+                    onValueChange = { viewModel.setCrescendoSec(it) }
+                )
+
+                // Dismiss Hold Time
+                ConfigSlider(
+                    label = "Dismiss Hold Time",
+                    value = dismissHoldSec,
+                    valueRange = 1f..5f,
+                    suffix = "s",
+                    steps = 3,
+                    onValueChange = { viewModel.setDismissHoldSec(it) }
+                )
             }
         }
 
@@ -151,23 +150,35 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         )
 
         val context = LocalContext.current
+        val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+        val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsState()
+
         val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as? AlarmManager
         val notificationManager = context.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as? NotificationManager
 
-        val hasNotificationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-        } else true
+        // Re-evaluate permissions every time screen resumes (user returns from Settings)
+        val hasNotificationPermission = remember(lifecycleState) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            } else true
+        }
 
-        val hasExactAlarmPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            alarmManager?.canScheduleExactAlarms() == true
-        } else true
+        val hasExactAlarmPermission = remember(lifecycleState) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                alarmManager?.canScheduleExactAlarms() == true
+            } else true
+        }
 
         val powerManager = context.getSystemService(android.content.Context.POWER_SERVICE) as? android.os.PowerManager
-        val isIgnoringBatteryOptimizations = powerManager?.isIgnoringBatteryOptimizations(context.packageName) == true
+        val isIgnoringBatteryOptimizations = remember(lifecycleState) {
+            powerManager?.isIgnoringBatteryOptimizations(context.packageName) == true
+        }
 
-        val canUseFullScreenIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            notificationManager?.canUseFullScreenIntent() == true
-        } else true
+        val canUseFullScreenIntent = remember(lifecycleState) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                notificationManager?.canUseFullScreenIntent() == true
+            } else true
+        }
 
         Card(
             colors = CardDefaults.cardColors(containerColor = DarkGray.copy(alpha = 0.2f)),
@@ -359,3 +370,40 @@ private fun PermissionRow(title: String, isGranted: Boolean, onClick: () -> Unit
         }
     }
 }
+
+@Composable
+private fun ConfigSlider(
+    label: String,
+    value: Int,
+    valueRange: ClosedFloatingPointRange<Float>,
+    suffix: String,
+    steps: Int = 0,
+    onValueChange: (Int) -> Unit
+) {
+    Column(modifier = Modifier.padding(vertical = 4.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(label, color = Color.White, fontSize = 14.sp)
+            Text(
+                text = "$value$suffix",
+                color = HotBellOrange,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        Slider(
+            value = value.toFloat(),
+            onValueChange = { onValueChange(it.toInt()) },
+            valueRange = valueRange,
+            steps = steps,
+            colors = SliderDefaults.colors(
+                thumbColor = HotBellOrange,
+                activeTrackColor = HotBellOrange,
+                inactiveTrackColor = Color.White.copy(alpha = 0.1f)
+            )
+        )
+    }
+}
+

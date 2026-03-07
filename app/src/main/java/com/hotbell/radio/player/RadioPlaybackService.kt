@@ -137,6 +137,10 @@ class RadioPlaybackService : MediaSessionService() {
         _currentStationName = stationName
         _playbackState.value = PlaybackState.Buffering
 
+        // Read alarm config from prefs
+        val prefs = getSharedPreferences("hotbell_prefs", MODE_PRIVATE)
+        val startVolumePercent = prefs.getInt("alarm_start_volume", 10)
+
         // Build MediaItem with metadata for system media controls
         val mediaItem = MediaItem.Builder()
             .setUri(url)
@@ -153,7 +157,7 @@ class RadioPlaybackService : MediaSessionService() {
             stop()
             clearMediaItems()
             setMediaItem(mediaItem)
-            volume = 0.1f // Start at 10%
+            volume = startVolumePercent / 100f
             prepare()
             play()
         }
@@ -223,21 +227,37 @@ class RadioPlaybackService : MediaSessionService() {
         loudnessEnhancer?.release()
         
         val exoPlayer = player ?: return
-        
+
+        // Read config from prefs
+        val prefs = getSharedPreferences("hotbell_prefs", MODE_PRIVATE)
+        val startVolumePercent = prefs.getInt("alarm_start_volume", 10)
+        val maxBoostPercent = prefs.getInt("alarm_max_boost", 150)
+        val totalCrescendoSec = prefs.getInt("alarm_crescendo_sec", 60)
+
+        // Calculate stage durations — 2/3 native volume, 1/3 loudness enhancer
+        val needsBoost = maxBoostPercent > 100
+        val stage1Seconds = if (needsBoost) (totalCrescendoSec * 2) / 3 else totalCrescendoSec
+        val stage2Seconds = if (needsBoost) totalCrescendoSec - stage1Seconds else 0
+
+        // LoudnessEnhancer gain: 150% ≈ 4000mB, 200% ≈ 6000mB
+        val maxGainMB = if (needsBoost) ((maxBoostPercent - 100) * 4000) / 50 else 0
+
         // Ensure LoudnessEnhancer is attached to the player's sessionId
-        try {
-            loudnessEnhancer = LoudnessEnhancer(exoPlayer.audioSessionId).apply {
-                setTargetGain(0)
-                enabled = true
+        if (needsBoost) {
+            try {
+                loudnessEnhancer = LoudnessEnhancer(exoPlayer.audioSessionId).apply {
+                    setTargetGain(0)
+                    enabled = true
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to initialize LoudnessEnhancer", e)
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to initialize LoudnessEnhancer", e)
         }
 
+        val baseVol = startVolumePercent / 100f
+
         fadeJob = serviceScope.launch {
-            // Stage 1: Native player volume 10% to 100% over 40 seconds
-            val stage1Seconds = 40
-            val baseVol = 0.1f
+            // Stage 1: Native player volume from startVolume% to 100%
             for (i in 1..stage1Seconds) {
                 if (exoPlayer.playbackState != Player.STATE_IDLE && exoPlayer.playbackState != Player.STATE_ENDED) {
                     exoPlayer.volume = baseVol + ((1f - baseVol) * (i.toFloat() / stage1Seconds.toFloat()))
@@ -246,17 +266,16 @@ class RadioPlaybackService : MediaSessionService() {
                 delay(1000)
             }
 
-            // Stage 2: LoudnessEnhancer gain 0 to +4000mB (approx 150% perceived) over 20 seconds
-            val stage2Seconds = 20
-            val maxGainMB = 4000 // milliBels
-            
-            for (i in 1..stage2Seconds) {
-                if (exoPlayer.playbackState != Player.STATE_IDLE && exoPlayer.playbackState != Player.STATE_ENDED) {
-                    val gain = (i.toFloat() / stage2Seconds.toFloat() * maxGainMB).toInt()
-                    loudnessEnhancer?.setTargetGain(gain)
-                    Log.d(TAG, "Crescendo Stage 2: enhancer gain = $gain mB")
+            // Stage 2: LoudnessEnhancer gain 0 to maxGainMB
+            if (needsBoost && stage2Seconds > 0) {
+                for (i in 1..stage2Seconds) {
+                    if (exoPlayer.playbackState != Player.STATE_IDLE && exoPlayer.playbackState != Player.STATE_ENDED) {
+                        val gain = (i.toFloat() / stage2Seconds.toFloat() * maxGainMB).toInt()
+                        loudnessEnhancer?.setTargetGain(gain)
+                        Log.d(TAG, "Crescendo Stage 2: enhancer gain = $gain mB")
+                    }
+                    delay(1000)
                 }
-                delay(1000)
             }
             Log.d(TAG, "Crescendo complete")
         }

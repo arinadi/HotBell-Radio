@@ -14,20 +14,46 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val prefs = application.getSharedPreferences("hotbell_prefs", Context.MODE_PRIVATE)
     private val updater = GithubUpdater(application)
 
+    // Vibrate on Wake
     private val _vibrateOnWake = MutableStateFlow(prefs.getBoolean("vibrate_on_wake", true))
     val vibrateOnWake: StateFlow<Boolean> = _vibrateOnWake.asStateFlow()
 
-    private val _streamQuality = MutableStateFlow(prefs.getString("stream_quality", "High") ?: "High")
-    val streamQuality: StateFlow<String> = _streamQuality.asStateFlow()
+    // Alarm Config
+    private val _startVolume = MutableStateFlow(prefs.getInt("alarm_start_volume", 10))
+    val startVolume: StateFlow<Int> = _startVolume.asStateFlow()
+
+    private val _maxBoost = MutableStateFlow(prefs.getInt("alarm_max_boost", 150))
+    val maxBoost: StateFlow<Int> = _maxBoost.asStateFlow()
+
+    private val _crescendoSec = MutableStateFlow(prefs.getInt("alarm_crescendo_sec", 60))
+    val crescendoSec: StateFlow<Int> = _crescendoSec.asStateFlow()
+
+    private val _dismissHoldSec = MutableStateFlow(prefs.getInt("alarm_dismiss_hold_sec", 3))
+    val dismissHoldSec: StateFlow<Int> = _dismissHoldSec.asStateFlow()
 
     fun setVibrateOnWake(vibrate: Boolean) {
         prefs.edit().putBoolean("vibrate_on_wake", vibrate).apply()
         _vibrateOnWake.value = vibrate
     }
 
-    fun setStreamQuality(quality: String) {
-        prefs.edit().putString("stream_quality", quality).apply()
-        _streamQuality.value = quality
+    fun setStartVolume(value: Int) {
+        prefs.edit().putInt("alarm_start_volume", value).apply()
+        _startVolume.value = value
+    }
+
+    fun setMaxBoost(value: Int) {
+        prefs.edit().putInt("alarm_max_boost", value).apply()
+        _maxBoost.value = value
+    }
+
+    fun setCrescendoSec(value: Int) {
+        prefs.edit().putInt("alarm_crescendo_sec", value).apply()
+        _crescendoSec.value = value
+    }
+
+    fun setDismissHoldSec(value: Int) {
+        prefs.edit().putInt("alarm_dismiss_hold_sec", value).apply()
+        _dismissHoldSec.value = value
     }
 
     fun checkForUpdates(manual: Boolean = false) {
