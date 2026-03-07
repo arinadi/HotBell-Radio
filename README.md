@@ -1,47 +1,72 @@
-# HotBell Radio
+# <p align="center">🔔 HotBell Radio</p>
+<p align="center">
+  <img src="mockup/home.png" width="200" alt="Home Screen">
+  <img src="mockup/wakeup.png" width="200" alt="Wake Up Screen">
+  <img src="mockup/alarm_input_1.png" width="200" alt="Alarm Edit Screen">
+</p>
 
-A modern Android alarm clock application that wakes you up to your favorite internet radio stations. 
+<p align="center">
+  <b>A premium, "different" Android alarm clock that ensures you never oversleep again.</b>
+</p>
 
-If you are a deep sleeper, traditional alarms might not be enough. HotBell ensures you are fully awake by requiring you to solve a math challenge before you can dismiss the alarm. As you try to solve the quiz, the radio plays in the background.
+---
 
-## Features
+## 🚀 Why HotBell?
+Deep sleepers often get used to standard ringtones and snooze through them without even noticing. **HotBell Radio** breaks that cycle by combining:
+1.  **Unpredictable Audio**: Wake up to live internet radio stations from across the globe.
+2.  **Cognitive Trigger**: Solve a math challenge to dismiss the alarm.
+3.  **Physical Commitment**: A "Hold to Confirm" gesture ensures you are conscious and focused.
 
-- **Radio Alarms**: Wake up to live internet radio from all around the world, powered by the [Radio Browser API](https://www.radio-browser.info/).
-- **Wake-Up Challenge**: Solve a math quiz with a hold-to-confirm gesture to ensure you're fully awake.
-- **Gradual Volume Crescendo**: Alarms start at 10% volume and increase to 150% using a *Loudness Enhancer* for heavy sleepers.
-- **Interactive Feedback**: Screen flashing, intensive haptic vibrations, and shaking animations for a stimulating wake-up experience.
-- **Now Playing Bar**: A global playback control bar that persists across all screens.
-- **Refined Alarm Planning**: Modern, mockup-aligned Alarm Edit screen with circular day selectors and inline time editing.
-- **Branded Experience**: Custom "H." logo and consistent "HotBell Orange" accents throughout the app.
-- **Reliability Suite**: Comprehensive permission management (Battery Optimization, Exact Alarms, Full-Screen Intents) to ensure 100% alarm reliability on Android 10-14+.
+---
 
-## Technologies Used
+## ✨ Features
 
-- **UI Framework:** Jetpack Compose, Material 3
-- **Local Persistence:** Room Database
-- **Media Playback:** ExoPlayer (Media3 Session API)
-- **Networking:** Retrofit, OkHttp, GSON
-- **Asynchronous Processing:** Kotlin Coroutines & Flow
-- **Background Tasks:** Foreground Services (`MediaSessionService`), Broadcast Receivers, `AlarmManager`
+- 🌍 **Global Radio Access**: Connect to thousands of live stations via the [Radio Browser API](https://www.radio-browser.info/).
+- 🧠 **Smart Dismissal**: Multiple-choice math quizzes with haptic and visual feedback.
+- 🔊 **Crescendo System**: Starts at 10% volume and gracefully scales to **150%** for the most stubborn sleepers.
+- 🎨 **Premium UI/UX**: Full Pitch Black dark mode with neon accents and a global **Now Playing** bar.
+- ⚙️ **Reliability Focused**: Built-in support for Exact Alarms, Battery Optimization, and Lock Screen Bypass.
+- 🔄 **Auto-Updates**: Built-in "Check for Updates" tool to keep you on the latest version directly from GitHub.
 
-## Requirements
-- Android SDK 26 (Android 8.0) to Android SDK 34 (Android 14)
+---
 
-## Getting Started
+## 🖼️ Gallery & Mockups
 
-1. Clone this repository.
-2. Open the project in Android Studio.
-3. Sync the Gradle files.
-4. Run the application on a physical device or emulator. (Note: Accurate alarm testing is best performed on physical devices due to variable Android Doze implementations on emulators).
+| Home & Planning | Experience & Interaction | Exploration |
+| :---: | :---: | :---: |
+| ![Home](mockup/home.png) | ![Wake Up](mockup/wakeup.png) | ![Explore](mockup/explore.png) |
+| *Clean Alarm List* | *Cognitive Challenge* | *Global Stations* |
+| ![Alarm Edit](mockup/alarm_input_1.png) | ![Settings](mockup/settings.png) | ![Now Playing](mockup/now_playing.png) |
+| *Modern Time Selection* | *Deep Configuration* | *Persistent Playback* |
 
-## Setting up Permissions
+---
 
-Make sure you grant the required permissions in the **Settings** screen:
-* **Notifications**: To see the active playback and alarm status.
-* **Battery Optimization**: Critical to prevent the system from killing the alarm service in the background.
-* **Exact Alarms**: Required for Android 12+ for precision scheduling.
-* **Full-Screen Intent**: Required for Android 14+ to show the wake-up screen while the device is locked.
+## 🛠️ Tech Stack
+- **Language**: Kotlin 1.9.x
+- **UI**: Jetpack Compose + Material 3
+- **Audio**: ExoPlayer (Media3) with Loudness Enhancer
+- **Database**: Room Persistence Library
+- **Networking**: Retrofit, OkHttp, GSON
+- **CI/CD**: GitHub Actions (Release Optimized)
 
-## License
+---
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## 🔓 Permissions Guide
+To guarantee 100% reliability, HotBell requires these permissions (configurable inside the App Settings):
+*   **Notifications**: Essential for background playback visibility.
+*   **Battery Optimization**: Prevents the system from "sleeping" through your alarm.
+*   **Full-Screen Intent**: Required to show the wake-up screen while the device is locked (Android 14+).
+*   **Exact Alarms**: Precision timing for Android 12+.
+
+---
+
+## 📦 Getting Started
+1. Clone the repo: `git clone https://github.com/arinadi/HotBell-Radio.git`
+2. Open in Android Studio.
+3. Use the **Release** build variant for the best experience.
+4. Add your signing keys in GitHub Secrets if you want to use the build workflow.
+
+---
+<p align="center">
+  <i>"A little bit different > a little bit better."</i>
+</p>
