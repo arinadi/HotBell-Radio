@@ -1,19 +1,43 @@
-*.iml
-.gradle
-/local.properties
-/.idea
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
-gradle.zip
-gradle-8.7/
-app/build/
-app/schemas/
+# Built application files
 *.apk
 *.ap_
+*.aab
+
+# Files for the ART/Dalvik VM
 *.dex
+
+# Java class files
 *.class
+
+# Generated files
+bin/
+gen/
+out/
+build/
+
+# Gradle files
+.gradle/
+gradle.zip
+gradle-8.7/
+
+# Local configuration file
+local.properties
+
+# Android Studio
+*.iml
+.idea/
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+
+# App build output
+app/build/
+app/schemas/
+
+# Logs
 *.log
+
+# Keystore files (security)
+*.jks
+*.keystore
