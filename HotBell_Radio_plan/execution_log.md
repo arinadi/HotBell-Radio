@@ -1,41 +1,32 @@
 # Execution Log
 
 ## Module 0: Setup
-* **Completed:** Initialized standard Android project structure (`com.hotbell.radio`).
-* **Components Built:**
-  * Base Compose Theme (`Theme.kt`, `Color.kt`) using Neon Red, Electric Blue, Pitch Black.
-  * Empty `MainActivity.kt`.
-  * Base `HotBellApp.kt` application class.
-  * Initial Room Schema (`AlarmEntity.kt`, `FavoriteStationEntity.kt`, `AppDatabase.kt`).
-* **Dependencies Added:** Compose BOM, Room 2.6.1 + KSP, Retrofit 2.11.0, ExoPlayer (Media3) 1.3.0.
+* **Completed:** Project structure, Gradle, Compose, Room, theme, dependencies.
 
 ## Module 1: Radio Integration
-* **Completed:** Full Radio Browser API integration and background audio playback via Media3.
-* **Components Built:**
-  * `StationNetworkModel.kt`, `ClickResponse.kt` — API response models.
-  * `RadioApiService.kt` — Retrofit interface (search, topclick, byuuid, click counter).
-  * `RetrofitClient.kt` — Singleton with User-Agent header and 5s timeout.
-  * `RadioRepository.kt` — Abstraction layer with input sanitization.
-  * `PlaybackState.kt` — Sealed class (Idle, Buffering, Playing, Error).
-  * `RadioPlaybackService.kt` — MediaSessionService with ExoPlayer, foreground notification.
-  * `RadioPlayerManager.kt` — Clean singleton wrapper for playback control.
+* **Completed:** Radio Browser API (Retrofit), ExoPlayer MediaSessionService, playback state management.
 
 ## Module 2: Alarm Management
-* **Completed:** Room DAO CRUD, AlarmManager scheduling, Boot/Alarm receivers.
+* **Completed:** AlarmDao, AlarmScheduler (setAlarmClock), AlarmReceiver, BootReceiver, AlarmRepository.
+
+## Module 3: UI & Orchestration
+* **Completed:** Full Compose UI with Jetpack Navigation.
 * **Components Built:**
-  * `AlarmDao.kt` — Room DAO with CRUD + Flow + getEnabled().
-  * `AlarmScheduler.kt` — Wraps AlarmManager.setAlarmClock() with day-of-week bitmask calculation.
-  * `AlarmReceiver.kt` — BroadcastReceiver launching WakeUpActivity on trigger.
-  * `BootReceiver.kt` — Reschedules all enabled alarms on boot.
-  * `AlarmRepository.kt` — Combines DAO + Scheduler for unified operations.
-  * Updated `AppDatabase.kt` with singleton pattern and `alarmDao()`.
-* **Manifest Updates:** Added `RECEIVE_BOOT_COMPLETED`, registered `AlarmReceiver` and `BootReceiver`.
+  * `FavoriteStationDao.kt` — Room DAO for favorite stations.
+  * `HomeViewModel.kt` — Alarm list state + toggle/delete.
+  * `RadioViewModel.kt` — Search, play, favorite, playback state.
+  * `AlarmEditViewModel.kt` — Time, days, station selection, save/update.
+  * `Route.kt` — Type-safe navigation routes.
+  * `HomeScreen.kt` — Alarm list with toggle switches, FAB, explore radio button.
+  * `RadioExplorerScreen.kt` — Search bar, station list, play/favorite, dual-mode (general/select).
+  * `AlarmEditScreen.kt` — Time picker, day chips, station selector, save button.
+  * `MainActivity.kt` — NavHost wiring all 3 screens with savedStateHandle for station selection.
 * **Self-Reflection:**
-  * **Security Risks:** None. Receivers are not exported (except BootReceiver for system intent).
-  * **Code Duplication:** None from Module 0/1.
-  * **Performance:** `setAlarmClock()` used for maximum reliability against Doze mode.
+  * **Security Risks:** None. Station selection via savedStateHandle is in-process.
+  * **Code Duplication:** RadioExplorerScreen dual-mode avoids duplicating the screen.
+  * **Performance:** StateFlow with WhileSubscribed(5000) avoids unnecessary recomposition.
 
 ## Mid-Project Health Check (After Module 2)
-* **Room DB Structure:** ✅ Correct. `AlarmEntity` and `FavoriteStationEntity` properly defined. `AlarmDao` provides full CRUD + Flow observation. Singleton pattern on `AppDatabase` ensures single instance.
-* **Background Execution:** ✅ `AlarmManager.setAlarmClock()` chosen over `setExactAndAllowWhileIdle()` for guaranteed alarm delivery. `BootReceiver` reschedules on reboot. `RadioPlaybackService` runs as foreground media service.
-* **Suggested Refactors:** None needed at this point. Architecture is clean and modular.
+* Room DB: ✅ Correct, singleton AppDatabase. AlarmDao + FavoriteStationDao.
+* Background Execution: ✅ setAlarmClock() for Doze reliability. Foreground media service.
+* No refactors needed.
