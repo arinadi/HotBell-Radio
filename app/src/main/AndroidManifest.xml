@@ -57,7 +57,7 @@
 
         <activity
             android:name=".ui.wakeup.WakeUpActivity"
-            android:exported="false"
+            android:exported="true"
             android:launchMode="singleInstance"
             android:excludeFromRecents="true"
             android:showOnLockScreen="true"
