@@ -36,6 +36,15 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         _vibrateOnWake.value = vibrate
     }
 
+    // Flashlight on Wake
+    private val _flashlightOnWake = MutableStateFlow(prefs.getBoolean("flashlight_on_wake", false))
+    val flashlightOnWake: StateFlow<Boolean> = _flashlightOnWake.asStateFlow()
+
+    fun setFlashlightOnWake(enabled: Boolean) {
+        prefs.edit().putBoolean("flashlight_on_wake", enabled).apply()
+        _flashlightOnWake.value = enabled
+    }
+
     fun setStartVolume(value: Int) {
         prefs.edit().putInt("alarm_start_volume", value).apply()
         _startVolume.value = value

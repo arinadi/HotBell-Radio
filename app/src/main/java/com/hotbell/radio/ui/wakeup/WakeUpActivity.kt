@@ -25,6 +25,9 @@ class WakeUpActivity : ComponentActivity() {
         val stationUuid = intent.getStringExtra("EXTRA_STATION_UUID")
         val stationName = intent.getStringExtra("EXTRA_STATION_NAME")
         val stationUrl = intent.getStringExtra("EXTRA_STATION_URL")
+        val snoozeDurationMin = intent.getIntExtra("EXTRA_SNOOZE_DURATION", 5)
+        val maxSnoozeCount = intent.getIntExtra("EXTRA_MAX_SNOOZE", 3)
+        val autoDismissMin = intent.getIntExtra("EXTRA_AUTO_DISMISS", 10)
 
         setContent {
             val viewModel: WakeUpViewModel = viewModel()
@@ -32,6 +35,7 @@ class WakeUpActivity : ComponentActivity() {
             // Trigger playback on launch
             androidx.compose.runtime.LaunchedEffect(Unit) {
                 viewModel.startAlarm(this@WakeUpActivity, stationUuid, stationName, stationUrl)
+                viewModel.configureSnooze(snoozeDurationMin, maxSnoozeCount, autoDismissMin)
             }
 
             HotBellTheme {

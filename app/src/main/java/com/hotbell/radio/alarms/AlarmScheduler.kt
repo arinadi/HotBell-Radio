@@ -49,6 +49,9 @@ class AlarmScheduler(private val context: Context) {
             putExtra("EXTRA_STATION_UUID", alarm.stationUuid)
             putExtra("EXTRA_STATION_NAME", alarm.stationName)
             putExtra("EXTRA_STATION_URL", alarm.stationUrl)
+            putExtra("EXTRA_SNOOZE_DURATION", alarm.snoozeDurationMin)
+            putExtra("EXTRA_MAX_SNOOZE", alarm.maxSnoozeCount)
+            putExtra("EXTRA_AUTO_DISMISS", alarm.autoDismissMin)
         }
         return PendingIntent.getBroadcast(
             context,

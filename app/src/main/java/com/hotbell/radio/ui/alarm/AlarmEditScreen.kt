@@ -37,6 +37,9 @@ fun AlarmEditScreen(
     val stationName by viewModel.stationName.collectAsState()
     val label by viewModel.label.collectAsState()
     val isVibrateEnabled by viewModel.isVibrateEnabled.collectAsState()
+    val snoozeDurationMin by viewModel.snoozeDurationMin.collectAsState()
+    val maxSnoozeCount by viewModel.maxSnoozeCount.collectAsState()
+    val autoDismissMin by viewModel.autoDismissMin.collectAsState()
     val isLoaded by viewModel.isLoaded.collectAsState()
 
     val scrollState = rememberScrollState()
@@ -306,6 +309,105 @@ fun AlarmEditScreen(
                                 uncheckedTrackColor = DarkGray.copy(alpha = 0.5f)
                             )
                         )
+                    }
+
+                    HorizontalDivider(
+                        color = Color.White.copy(alpha = 0.05f),
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+
+                    // Snooze Duration Row
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Snooze Duration", color = Color.White, fontSize = 16.sp)
+                            Text("${snoozeDurationMin} min", color = DarkGray, fontSize = 12.sp)
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf(1, 3, 5, 10).forEach { min ->
+                                val selected = snoozeDurationMin == min
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (selected) HotBellOrange else DarkGray.copy(alpha = 0.3f))
+                                        .clickable { viewModel.setSnoozeDuration(min) }
+                                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("${min}m", color = if (selected) Color.White else Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(
+                        color = Color.White.copy(alpha = 0.05f),
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+
+                    // Max Snooze Count Row
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Max Snoozes", color = Color.White, fontSize = 16.sp)
+                            Text("$maxSnoozeCount times", color = DarkGray, fontSize = 12.sp)
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf(1, 2, 3, 5).forEach { count ->
+                                val selected = maxSnoozeCount == count
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (selected) HotBellOrange else DarkGray.copy(alpha = 0.3f))
+                                        .clickable { viewModel.setMaxSnoozeCount(count) }
+                                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("$count", color = if (selected) Color.White else Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(
+                        color = Color.White.copy(alpha = 0.05f),
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+
+                    // Auto-Dismiss Row
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Auto-Dismiss", color = Color.White, fontSize = 16.sp)
+                            Text("After $autoDismissMin min", color = DarkGray, fontSize = 12.sp)
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf(5, 10, 15, 30).forEach { min ->
+                                val selected = autoDismissMin == min
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (selected) HotBellOrange else DarkGray.copy(alpha = 0.3f))
+                                        .clickable { viewModel.setAutoDismissMin(min) }
+                                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("${min}m", color = if (selected) Color.White else Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
                     }
                 }
             }

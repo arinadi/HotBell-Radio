@@ -55,6 +55,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun toggleSkipNext(alarm: AlarmEntity) {
+        viewModelScope.launch {
+            val updated = alarm.copy(skipNext = !alarm.skipNext)
+            alarmRepository.updateAlarm(updated)
+        }
+    }
+
     fun playFavoriteStation(station: com.hotbell.radio.data.FavoriteStationEntity) {
         com.hotbell.radio.player.RadioPlayerManager.play(getApplication(), station.urlResolved, station.name)
     }

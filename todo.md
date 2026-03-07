@@ -1,4 +1,3 @@
-buatkan plan untuk fitur alarm
 Snooze duration & max count — sangat umum dan user pasti expect
 Auto-dismiss timeout — keamanan agar alarm tidak bunyi tanpa batas
 Alarm label — basic tapi penting
@@ -12,4 +11,4 @@ Skip next occurrence
 
 Photo match (foto lokasi tertentu)	gunakan gemini-2.5-flash bring your own key
 
-Configurable start/max volume
+Configurable start/max volumes

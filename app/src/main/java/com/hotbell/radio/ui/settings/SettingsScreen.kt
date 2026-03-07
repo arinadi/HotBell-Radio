@@ -40,6 +40,7 @@ import android.app.NotificationManager
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
     val vibrateOnWake by viewModel.vibrateOnWake.collectAsState()
+    val flashlightOnWake by viewModel.flashlightOnWake.collectAsState()
     val startVolume by viewModel.startVolume.collectAsState()
     val maxBoost by viewModel.maxBoost.collectAsState()
     val crescendoSec by viewModel.crescendoSec.collectAsState()
@@ -86,6 +87,25 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                     Switch(
                         checked = vibrateOnWake,
                         onCheckedChange = { viewModel.setVibrateOnWake(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = HotBellOrange,
+                            uncheckedThumbColor = Color.Gray,
+                            uncheckedTrackColor = PitchBlack
+                        )
+                    )
+                }
+
+                // Flashlight on Wake
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Flashlight on Wake", color = Color.White, fontSize = 16.sp)
+                    Switch(
+                        checked = flashlightOnWake,
+                        onCheckedChange = { viewModel.setFlashlightOnWake(it) },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
                             checkedTrackColor = HotBellOrange,

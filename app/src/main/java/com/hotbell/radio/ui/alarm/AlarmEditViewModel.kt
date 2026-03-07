@@ -48,6 +48,15 @@ class AlarmEditViewModel(application: Application) : AndroidViewModel(applicatio
     private val _isVibrateEnabled = MutableStateFlow(true)
     val isVibrateEnabled: StateFlow<Boolean> = _isVibrateEnabled.asStateFlow()
 
+    private val _snoozeDurationMin = MutableStateFlow(5)
+    val snoozeDurationMin: StateFlow<Int> = _snoozeDurationMin.asStateFlow()
+
+    private val _maxSnoozeCount = MutableStateFlow(3)
+    val maxSnoozeCount: StateFlow<Int> = _maxSnoozeCount.asStateFlow()
+
+    private val _autoDismissMin = MutableStateFlow(10)
+    val autoDismissMin: StateFlow<Int> = _autoDismissMin.asStateFlow()
+
     private var editingAlarmId: String? = null
 
     fun loadAlarm(alarmId: String?) {
@@ -67,6 +76,9 @@ class AlarmEditViewModel(application: Application) : AndroidViewModel(applicatio
                 _stationUrl.value = alarm.stationUrl
                 _label.value = alarm.label ?: ""
                 _isVibrateEnabled.value = alarm.isVibrateEnabled
+                _snoozeDurationMin.value = alarm.snoozeDurationMin
+                _maxSnoozeCount.value = alarm.maxSnoozeCount
+                _autoDismissMin.value = alarm.autoDismissMin
             }
             _isLoaded.value = true
         }
@@ -95,6 +107,18 @@ class AlarmEditViewModel(application: Application) : AndroidViewModel(applicatio
         _isVibrateEnabled.value = enabled
     }
 
+    fun setSnoozeDuration(min: Int) {
+        _snoozeDurationMin.value = min
+    }
+
+    fun setMaxSnoozeCount(count: Int) {
+        _maxSnoozeCount.value = count
+    }
+
+    fun setAutoDismissMin(min: Int) {
+        _autoDismissMin.value = min
+    }
+
     fun testAlarm(context: Context) {
         val intent = Intent(context, WakeUpActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -118,7 +142,10 @@ class AlarmEditViewModel(application: Application) : AndroidViewModel(applicatio
                 stationName = _stationName.value,
                 stationUrl = _stationUrl.value,
                 label = _label.value,
-                isVibrateEnabled = _isVibrateEnabled.value
+                isVibrateEnabled = _isVibrateEnabled.value,
+                snoozeDurationMin = _snoozeDurationMin.value,
+                maxSnoozeCount = _maxSnoozeCount.value,
+                autoDismissMin = _autoDismissMin.value
             )
             if (editingAlarmId != null) {
                 alarmRepository.updateAlarm(alarm)

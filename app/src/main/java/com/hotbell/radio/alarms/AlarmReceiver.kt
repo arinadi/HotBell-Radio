@@ -6,10 +6,13 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.hotbell.radio.R
+import com.hotbell.radio.data.AppDatabase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class AlarmReceiver : BroadcastReceiver() {
 
@@ -24,18 +27,51 @@ class AlarmReceiver : BroadcastReceiver() {
         val stationUuid = intent.getStringExtra("EXTRA_STATION_UUID")
         val stationName = intent.getStringExtra("EXTRA_STATION_NAME")
         val stationUrl = intent.getStringExtra("EXTRA_STATION_URL")
+        val snoozeDurationMin = intent.getIntExtra("EXTRA_SNOOZE_DURATION", 5)
+        val maxSnoozeCount = intent.getIntExtra("EXTRA_MAX_SNOOZE", 3)
+        val autoDismissMin = intent.getIntExtra("EXTRA_AUTO_DISMISS", 10)
 
         Log.d(TAG, "Alarm fired via Broadcast! id=$alarmId, station=$stationName")
 
+        // Check skipNext from DB (uses goAsync for coroutine)
+        val pendingResult = goAsync()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val db = AppDatabase.getInstance(context)
+                val alarm = db.alarmDao().getById(alarmId)
+                if (alarm?.skipNext == true) {
+                    Log.d(TAG, "Alarm $alarmId skipNext=true. Skipping & rescheduling.")
+                    db.alarmDao().update(alarm.copy(skipNext = false))
+                    AlarmScheduler(context).schedule(alarm.copy(skipNext = false))
+                    pendingResult.finish()
+                    return@launch
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error checking skipNext", e)
+            }
+
+            // Fire the alarm
+            fireAlarm(context, alarmId, stationUuid, stationName, stationUrl,
+                snoozeDurationMin, maxSnoozeCount, autoDismissMin)
+            pendingResult.finish()
+        }
+    }
+
+    private fun fireAlarm(
+        context: Context,
+        alarmId: String,
+        stationUuid: String?,
+        stationName: String?,
+        stationUrl: String?,
+        snoozeDurationMin: Int,
+        maxSnoozeCount: Int,
+        autoDismissMin: Int
+    ) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         val channel = NotificationChannel(
-            CHANNEL_ID,
-            CHANNEL_NAME,
-            NotificationManager.IMPORTANCE_HIGH
-        ).apply {
-            description = "Used to display high priority alarms"
-        }
+            CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH
+        ).apply { description = "Used to display high priority alarms" }
         notificationManager.createNotificationChannel(channel)
 
         val wakeUpIntent = Intent(context, com.hotbell.radio.ui.wakeup.WakeUpActivity::class.java).apply {
@@ -44,16 +80,17 @@ class AlarmReceiver : BroadcastReceiver() {
             putExtra("EXTRA_STATION_UUID", stationUuid ?: "")
             putExtra("EXTRA_STATION_NAME", stationName ?: "Alarm Station")
             putExtra("EXTRA_STATION_URL", stationUrl ?: "")
+            putExtra("EXTRA_SNOOZE_DURATION", snoozeDurationMin)
+            putExtra("EXTRA_MAX_SNOOZE", maxSnoozeCount)
+            putExtra("EXTRA_AUTO_DISMISS", autoDismissMin)
         }
 
         val fullScreenPendingIntent = PendingIntent.getActivity(
-            context,
-            alarmId.hashCode(),
-            wakeUpIntent,
+            context, alarmId.hashCode(), wakeUpIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notificationBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle("HotBell Alarm")
             .setContentText("Wake up! Playing ${stationName ?: "radio"}")
@@ -62,6 +99,6 @@ class AlarmReceiver : BroadcastReceiver() {
             .setFullScreenIntent(fullScreenPendingIntent, true)
             .setAutoCancel(true)
 
-        notificationManager.notify(alarmId.hashCode(), notificationBuilder.build())
+        notificationManager.notify(alarmId.hashCode(), notification.build())
     }
 }

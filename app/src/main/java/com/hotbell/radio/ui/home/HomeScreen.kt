@@ -173,7 +173,8 @@ fun HomeScreen(
                                 countdown = countdowns[alarm.id],
                                 onToggle = { viewModel.toggleAlarm(alarm) },
                                 onEdit = { onEditAlarm(alarm.id) },
-                                onDelete = { viewModel.deleteAlarm(alarm) }
+                                onDelete = { viewModel.deleteAlarm(alarm) },
+                                onSkipNext = { viewModel.toggleSkipNext(alarm) }
                             )
                         }
                     }
@@ -188,7 +189,8 @@ private fun AlarmCard(
     countdown: String?,
     onToggle: () -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onSkipNext: () -> Unit
 ) {
     val bgColor by animateColorAsState(
         targetValue = if (alarm.isEnabled) DarkGray.copy(alpha = 0.5f) else DarkGray.copy(alpha = 0.2f),
@@ -242,13 +244,39 @@ private fun AlarmCard(
                 )
             }
 
-            if (alarm.isEnabled && countdown != null) {
+            // Show label if present
+            if (!alarm.label.isNullOrBlank()) {
                 Text(
-                    text = "Rings in $countdown",
-                    color = HotBellOrange,
-                    fontSize = 12.sp,
+                    text = alarm.label!!,
+                    color = Color.White.copy(alpha = 0.5f),
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )
+            }
+
+            if (alarm.isEnabled && countdown != null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = if (alarm.skipNext) "⏭ Skipping next" else "Rings in $countdown",
+                        color = if (alarm.skipNext) Color.Yellow.copy(alpha = 0.7f) else HotBellOrange,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    if (alarm.isEnabled) {
+                        Text(
+                            text = if (alarm.skipNext) "Undo" else "Skip",
+                            color = Color.Gray,
+                            fontSize = 11.sp,
+                            modifier = Modifier
+                                .clickable { onSkipNext() }
+                                .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
+                }
             } else {
                 Spacer(modifier = Modifier.height(16.dp))
             }

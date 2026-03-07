@@ -14,5 +14,9 @@ data class AlarmEntity(
     val stationName: String?,
     val stationUrl: String?,
     val label: String? = "",
-    val isVibrateEnabled: Boolean = true
+    val isVibrateEnabled: Boolean = true,
+    val snoozeDurationMin: Int = 5,
+    val maxSnoozeCount: Int = 3,
+    val autoDismissMin: Int = 10,
+    val skipNext: Boolean = false
 )

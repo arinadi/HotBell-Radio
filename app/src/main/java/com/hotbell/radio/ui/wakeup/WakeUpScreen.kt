@@ -14,6 +14,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -76,6 +77,8 @@ fun WakeUpScreen(
 ) {
     val challenge by viewModel.challenge.collectAsState()
     val isFallbackActive by viewModel.isFallbackActive.collectAsState()
+    val canSnooze by viewModel.canSnooze.collectAsState()
+    val snoozeRemaining by viewModel.snoozeCountRemaining.collectAsState()
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("hotbell_prefs", android.content.Context.MODE_PRIVATE) }
     val holdDurationMs = remember { prefs.getInt("alarm_dismiss_hold_sec", 3) * 1000 }
@@ -312,6 +315,29 @@ fun WakeUpScreen(
                             viewModel.generateNewChallenge() 
                         }
                     )
+                }
+
+                // Snooze Button
+                if (canSnooze) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color.White.copy(alpha = 0.08f))
+                            .clickable {
+                                viewModel.snoozeAlarm { onDismissed() }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "\uD83D\uDCA4 Snooze ($snoozeRemaining left)",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
         }
