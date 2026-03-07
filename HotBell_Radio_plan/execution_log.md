@@ -15,4 +15,21 @@
 * **Self-Reflection:**
   * **Security Risks:** None introduced. Manifest allows internet properly.
   * **Code Duplication:** None yet, this is the base module.
-  * **Performance/Other:** Upgraded Android Gradle Plugin to 8.3.0 and disabled standard AGP jlink behaviors for system modules to support native JDK 21 compilations required for SDK 34.
+  * **Performance/Other:** Upgraded Android Gradle Plugin to 8.3.0 to support JDK 21.
+
+## Module 1: Radio Integration
+* **Completed:** Full Radio Browser API integration and background audio playback via Media3.
+* **Components Built:**
+  * `StationNetworkModel.kt`, `ClickResponse.kt` — API response models.
+  * `RadioApiService.kt` — Retrofit interface (search, topclick, byuuid, click counter).
+  * `RetrofitClient.kt` — Singleton with User-Agent header and 5s timeout.
+  * `RadioRepository.kt` — Abstraction layer with input sanitization.
+  * `PlaybackState.kt` — Sealed class (Idle, Buffering, Playing, Error).
+  * `RadioPlaybackService.kt` — MediaSessionService with ExoPlayer, foreground notification.
+  * `RadioPlayerManager.kt` — Clean singleton wrapper for playback control.
+  * `ic_radio.xml` — Notification icon drawable.
+* **Manifest Updates:** Added `usesCleartextTraffic`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, registered `RadioPlaybackService`.
+* **Self-Reflection:**
+  * **Security Risks:** Input sanitization applied to search queries (trimmed, length-capped).
+  * **Code Duplication:** None from Module 0.
+  * **Performance:** ExoPlayer streaming tested successfully. Buffering transitions are smooth. Network errors correctly surface via StateFlow.
