@@ -1,12 +1,15 @@
 package com.hotbell.radio.ui.alarm
 
 import android.app.Application
+import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.hotbell.radio.alarms.AlarmRepository
 import com.hotbell.radio.alarms.AlarmScheduler
 import com.hotbell.radio.data.AlarmEntity
 import com.hotbell.radio.data.AppDatabase
+import com.hotbell.radio.ui.wakeup.WakeUpActivity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,6 +36,9 @@ class AlarmEditViewModel(application: Application) : AndroidViewModel(applicatio
     private val _stationName = MutableStateFlow<String?>(null)
     val stationName: StateFlow<String?> = _stationName.asStateFlow()
 
+    private val _stationUrl = MutableStateFlow<String?>(null)
+    val stationUrl: StateFlow<String?> = _stationUrl.asStateFlow()
+
     private val _isLoaded = MutableStateFlow(false)
     val isLoaded: StateFlow<Boolean> = _isLoaded.asStateFlow()
 
@@ -52,6 +58,7 @@ class AlarmEditViewModel(application: Application) : AndroidViewModel(applicatio
                 _daysOfWeek.value = alarm.daysOfWeek
                 _stationUuid.value = alarm.stationUuid
                 _stationName.value = alarm.stationName
+                _stationUrl.value = alarm.stationUrl
             }
             _isLoaded.value = true
         }
@@ -66,9 +73,21 @@ class AlarmEditViewModel(application: Application) : AndroidViewModel(applicatio
         _daysOfWeek.value = _daysOfWeek.value xor (1 shl dayBit)
     }
 
-    fun setStation(uuid: String, name: String) {
+    fun setStation(uuid: String, name: String, url: String) {
         _stationUuid.value = uuid
         _stationName.value = name
+        _stationUrl.value = url
+    }
+
+    fun testAlarm(context: Context) {
+        val intent = Intent(context, WakeUpActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra("EXTRA_ALARM_ID", editingAlarmId ?: "TEST_ALARM")
+            putExtra("EXTRA_STATION_UUID", _stationUuid.value)
+            putExtra("EXTRA_STATION_NAME", _stationName.value)
+            putExtra("EXTRA_STATION_URL", _stationUrl.value)
+        }
+        context.startActivity(intent)
     }
 
     fun saveAlarm(onDone: () -> Unit) {
@@ -80,7 +99,8 @@ class AlarmEditViewModel(application: Application) : AndroidViewModel(applicatio
                 daysOfWeek = _daysOfWeek.value,
                 isEnabled = true,
                 stationUuid = _stationUuid.value,
-                stationName = _stationName.value
+                stationName = _stationName.value,
+                stationUrl = _stationUrl.value
             )
             if (editingAlarmId != null) {
                 alarmRepository.updateAlarm(alarm)

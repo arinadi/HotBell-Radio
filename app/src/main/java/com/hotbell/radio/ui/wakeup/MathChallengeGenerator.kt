@@ -10,33 +10,34 @@ data class MathChallenge(
 
 object MathChallengeGenerator {
     fun generate(): MathChallenge {
-        val type = Random.nextInt(3) // 0: add, 1: sub, 2: mul
+        var a = 0
+        var b = 0
+        var answer = 0
+        var symbol = ""
         
-        val a: Int
-        val b: Int
-        val answer: Int
-        val symbol: String
-
-        when (type) {
-            0 -> { // Addition
-                a = Random.nextInt(10, 100)
-                b = Random.nextInt(10, 100)
-                answer = a + b
-                symbol = "+"
+        do {
+            val type = Random.nextInt(3) // 0: add, 1: sub, 2: mul
+            when (type) {
+                0 -> { // Addition
+                    a = Random.nextInt(10, 90)
+                    b = Random.nextInt(10, 90)
+                    answer = a + b
+                    symbol = "+"
+                }
+                1 -> { // Subtraction
+                    a = Random.nextInt(30, 100)
+                    b = Random.nextInt(10, a) // Ensure positive result
+                    answer = a - b
+                    symbol = "-"
+                }
+                else -> { // Multiplication
+                    a = Random.nextInt(2, 20)
+                    b = Random.nextInt(2, 50)
+                    answer = a * b
+                    symbol = "×"
+                }
             }
-            1 -> { // Subtraction
-                a = Random.nextInt(30, 100)
-                b = Random.nextInt(10, a) // Ensure positive result
-                answer = a - b
-                symbol = "-"
-            }
-            else -> { // Multiplication
-                a = Random.nextInt(3, 12)
-                b = Random.nextInt(3, 12)
-                answer = a * b
-                symbol = "×"
-            }
-        }
+        } while (answer !in 10..99)
 
         val question = "$a $symbol $b"
         
@@ -45,7 +46,7 @@ object MathChallengeGenerator {
         while (wrongAnswers.size < 3) {
             val offset = Random.nextInt(-10, 11)
             val wrong = answer + offset
-            if (offset != 0 && wrong > 0) {
+            if (offset != 0 && wrong in 10..99) {
                 wrongAnswers.add(wrong)
             }
         }

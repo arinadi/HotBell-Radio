@@ -15,7 +15,21 @@ object RadioPlayerManager {
             putExtra("STREAM_URL", streamUrl)
             putExtra("STATION_NAME", stationName)
         }
-        context.startForegroundService(intent)
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        } catch (e: Exception) {
+            // Catches ForegroundServiceStartNotAllowedException on Android 12+ or SecurityException
+            android.util.Log.e("RadioPlayerManager", "Failed to start foreground service", e)
+            try {
+                context.startService(intent)
+            } catch (fallbackEx: Exception) {
+                android.util.Log.e("RadioPlayerManager", "Also failed to start normal service", fallbackEx)
+            }
+        }
     }
 
     fun stop(context: Context) {

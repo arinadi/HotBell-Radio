@@ -24,13 +24,14 @@ class WakeUpActivity : ComponentActivity() {
 
         val stationUuid = intent.getStringExtra("EXTRA_STATION_UUID")
         val stationName = intent.getStringExtra("EXTRA_STATION_NAME")
+        val stationUrl = intent.getStringExtra("EXTRA_STATION_URL")
 
         setContent {
             val viewModel: WakeUpViewModel = viewModel()
             
             // Trigger playback on launch
             androidx.compose.runtime.LaunchedEffect(Unit) {
-                viewModel.startAlarm(stationUuid, stationName)
+                viewModel.startAlarm(this@WakeUpActivity, stationUuid, stationName, stationUrl)
             }
 
             HotBellTheme {

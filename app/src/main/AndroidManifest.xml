@@ -9,6 +9,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
 
@@ -24,6 +26,8 @@
         android:theme="@style/Theme.HotBellRadio"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
+
+        <!-- Main Activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -34,6 +38,19 @@
             </intent-filter>
         </activity>
 
+        <!-- WakeUp Alarm Activity -->
+        <!-- FIX: Hapus showOnLockScreen (deprecated sejak Android 8) -->
+        <!-- Ganti dengan setShowWhenLocked() + setTurnScreenOn() di kode Activity -->
+        <activity
+            android:name=".ui.wakeup.WakeUpActivity"
+            android:exported="true"
+            android:launchMode="singleInstance"
+            android:excludeFromRecents="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:theme="@style/Theme.HotBellRadio" />
+
+        <!-- Radio Playback Service -->
         <service
             android:name=".player.RadioPlaybackService"
             android:exported="false"
@@ -43,10 +60,19 @@
             </intent-filter>
         </service>
 
+        <!-- FIX: AlarmService — mencegah sistem kill proses sebelum getar/animasi berjalan -->
+        <service
+            android:name=".alarms.AlarmService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <!-- FIX: AlarmReceiver exported=true agar AlarmManager bisa kirim intent di Android 12+ -->
         <receiver
             android:name=".alarms.AlarmReceiver"
-            android:exported="false" />
+            android:exported="true"
+            android:permission="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+        <!-- Boot Receiver -->
         <receiver
             android:name=".alarms.BootReceiver"
             android:exported="true">
@@ -55,14 +81,5 @@
             </intent-filter>
         </receiver>
 
-        <activity
-            android:name=".ui.wakeup.WakeUpActivity"
-            android:exported="true"
-            android:launchMode="singleInstance"
-            android:excludeFromRecents="true"
-            android:showOnLockScreen="true"
-            android:showWhenLocked="true"
-            android:turnScreenOn="true"
-            android:theme="@style/Theme.HotBellRadio" />
     </application>
 </manifest>

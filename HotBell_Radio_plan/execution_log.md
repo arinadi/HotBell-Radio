@@ -30,3 +30,18 @@
 * Room DB: ✅ Correct, singleton AppDatabase. AlarmDao + FavoriteStationDao.
 * Background Execution: ✅ setAlarmClock() for Doze reliability. Foreground media service.
 * No refactors needed.
+
+## Module 4: Wake-up Challenge
+* **Completed:** Implemented math quiz constraints for alarm dismissal. Fullscreen `WakeUpActivity` utilizing `FLAG_ACTIVITY_NEW_TASK` and screen bypassing flags. Added `RingtoneFallbackManager` if ExoPlayer fails to stream within 10 seconds.
+* **Feedback Mechanism:** Added hold-to-confirm answers.
+
+## Module 5: Countdown & Reliability
+* **Completed:** Handled `stationUrl` persistence deeply in `AlarmEntity` to skip db-fetch race conditions on alarm trigger.
+* **Favorites Tab:** Built favorite station list locally synced to the home screen. Added dynamic 'Next Alarm in X hrs' ticker. Added testing mode.
+
+## Module 6: Full-Screen Intent & Android 14 Compatibility
+* **Completed:** Extracted alarm activity launching into `AlarmReceiver` to send high-priority notifications with `setFullScreenIntent`. Added dynamic permission modal requesting `POST_NOTIFICATIONS`, `SCHEDULE_EXACT_ALARM`, and `USE_FULL_SCREEN_INTENT`.
+
+## Module 7: Wake-Up Experience Enhancements
+* **Completed:** `RadioPlaybackService` implements a 60-second fade-in volume crescendo. `LoudnessEnhancer` is utilized to boost gain to +4000mB up to 150% volume.
+* **UI Feedback:** Restrained math operations strictly to 2-digit boundaries. Implemented distinctive colorful keys, intense haptic Waveform vibrations, red/green screen flashes, and physical horizontal shaking animations for right/wrong attempts.

@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "47eb56a609b1696c1a20a22824121ec7",
+    "identityHash": "55dc936c33338a4f174780dd9559d549",
     "entities": [
       {
         "tableName": "alarms",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `timeHour` INTEGER NOT NULL, `timeMin` INTEGER NOT NULL, `daysOfWeek` INTEGER NOT NULL, `isEnabled` INTEGER NOT NULL, `stationUuid` TEXT, `stationName` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `timeHour` INTEGER NOT NULL, `timeMin` INTEGER NOT NULL, `daysOfWeek` INTEGER NOT NULL, `isEnabled` INTEGER NOT NULL, `stationUuid` TEXT, `stationName` TEXT, `stationUrl` TEXT, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -47,6 +47,12 @@
           {
             "fieldPath": "stationName",
             "columnName": "stationName",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "stationUrl",
+            "columnName": "stationUrl",
             "affinity": "TEXT",
             "notNull": false
           }
@@ -108,7 +114,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '47eb56a609b1696c1a20a22824121ec7')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '55dc936c33338a4f174780dd9559d549')"
     ]
   }
 }

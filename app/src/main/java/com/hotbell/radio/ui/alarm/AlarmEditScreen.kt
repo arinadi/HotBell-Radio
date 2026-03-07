@@ -184,18 +184,35 @@ fun AlarmEditScreen(
             }
 
             Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            // Save button
-            Button(
-                onClick = { viewModel.saveAlarm(onDone) },
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 32.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = NeonRed),
-                shape = RoundedCornerShape(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(Icons.Default.Check, contentDescription = null, tint = Color.White)
-                Text("  Save Alarm", fontSize = 16.sp, color = Color.White)
+                // Test button
+                val context = androidx.compose.ui.platform.LocalContext.current
+                Button(
+                    onClick = { viewModel.testAlarm(context) },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = ElectricBlue),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Test", fontSize = 16.sp, color = PitchBlack, fontWeight = FontWeight.Bold)
+                }
+
+                // Save button
+                Button(
+                    onClick = { viewModel.saveAlarm(onDone) },
+                    modifier = Modifier.weight(2f),
+                    colors = ButtonDefaults.buttonColors(containerColor = NeonRed),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(Icons.Default.Check, contentDescription = null, tint = Color.White)
+                    Text("  Save", fontSize = 16.sp, color = Color.White)
+                }
             }
         }
     }

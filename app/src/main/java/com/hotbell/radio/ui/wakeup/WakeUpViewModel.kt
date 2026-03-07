@@ -1,6 +1,7 @@
 package com.hotbell.radio.ui.wakeup
 
 import android.app.Application
+import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import androidx.lifecycle.AndroidViewModel
@@ -40,29 +41,45 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun startAlarm(stationUuid: String?, stationName: String?) {
+    fun startAlarm(context: Context, stationUuid: String?, stationName: String?, stationUrl: String? = null) {
+        android.util.Log.d("WakeUpViewModel", "startAlarm called with stationUuid=$stationUuid, stationName=$stationName, stationUrl=$stationUrl")
         viewModelScope.launch {
-            if (stationUuid == null || !hasInternetConnection()) {
+            if (stationUuid == null && stationUrl == null) {
+                android.util.Log.e("WakeUpViewModel", "Both stationUuid and stationUrl are null, triggering fallback")
+                startFallback()
+                return@launch
+            }
+            if (!hasInternetConnection()) {
+                android.util.Log.e("WakeUpViewModel", "No internet connection, triggering fallback")
                 startFallback()
                 return@launch
             }
 
-            // Fetch latest URL from DB directly before playing
-            val db = com.hotbell.radio.data.AppDatabase.getInstance(getApplication())
-            val stationUrl = db.favoriteStationDao().getByUuid(stationUuid)?.urlResolved
+            // Use passed URL if available, otherwise fetch from DB
+            val finalUrl = stationUrl ?: run {
+                val db = com.hotbell.radio.data.AppDatabase.getInstance(getApplication())
+                db.favoriteStationDao().getByUuid(stationUuid!!)?.urlResolved
+            }
 
-            if (stationUrl == null) {
+            if (finalUrl == null) {
+                android.util.Log.e("WakeUpViewModel", "Failed to resolve stationUrl, triggering fallback")
                 startFallback()
                 return@launch
             }
 
-            RadioPlayerManager.play(getApplication(), stationUrl, stationName ?: "Alarm Station")
+            android.util.Log.d("WakeUpViewModel", "Trying to play radio stream: $finalUrl")
+            RadioPlayerManager.play(context, finalUrl, stationName ?: "Alarm Station")
 
-            // Wait 3 seconds, if not playing, start fallback
+            // Wait 30 seconds, if not playing, start fallback
             fallbackTimeoutJob = viewModelScope.launch {
-                delay(3000)
-                if (RadioPlayerManager.playbackState.value !is PlaybackState.Playing) {
+                delay(30000)
+                val currentState = RadioPlayerManager.playbackState.value
+                android.util.Log.d("WakeUpViewModel", "30-second timeout reached. currentState=$currentState")
+                if (currentState !is PlaybackState.`Playing`) {
+                    android.util.Log.e("WakeUpViewModel", "Not playing after 30 seconds, triggering fallback")
                     startFallback()
+                } else {
+                    android.util.Log.d("WakeUpViewModel", "Radio is playing after 30 seconds, no fallback needed")
                 }
             }
         }
@@ -70,6 +87,7 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun startFallback() {
         if (!_isFallbackActive.value) {
+            android.util.Log.d("WakeUpViewModel", "Starting fallback ringtone. Current Radio State: ${RadioPlayerManager.playbackState.value}")
             _isFallbackActive.value = true
             ringtoneFallbackManager.playFallbackAlarm()
             RadioPlayerManager.stop(getApplication())
@@ -78,6 +96,7 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun stopFallback() {
         if (_isFallbackActive.value) {
+            android.util.Log.d("WakeUpViewModel", "Stopping fallback ringtone")
             _isFallbackActive.value = false
             ringtoneFallbackManager.stop()
         }
@@ -88,6 +107,7 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun dismissAlarm(onDismissed: () -> Unit) {
+        android.util.Log.d("WakeUpViewModel", "Dismissing alarm")
         fallbackTimeoutJob?.cancel()
         RadioPlayerManager.stop(getApplication())
         stopFallback()
@@ -96,9 +116,19 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun hasInternetConnection(): Boolean {
         val cm = getApplication<Application>().getSystemService(ConnectivityManager::class.java)
-        val network = cm.activeNetwork ?: return false
-        val capabilities = cm.getNetworkCapabilities(network) ?: return false
-        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        val network = cm.activeNetwork
+        if (network == null) {
+            android.util.Log.w("WakeUpViewModel", "hasInternetConnection: activeNetwork is null")
+            return false
+        }
+        val capabilities = cm.getNetworkCapabilities(network)
+        if (capabilities == null) {
+            android.util.Log.w("WakeUpViewModel", "hasInternetConnection: capabilities are null")
+            return false
+        }
+        val hasInternet = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        android.util.Log.d("WakeUpViewModel", "hasInternetConnection: $hasInternet")
+        return hasInternet
     }
 
     override fun onCleared() {

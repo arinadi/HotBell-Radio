@@ -4,10 +4,9 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.util.Log
 import com.hotbell.radio.data.AlarmEntity
-import java.util.Calendar
+import com.hotbell.radio.utils.AlarmUtils
 
 class AlarmScheduler(private val context: Context) {
 
@@ -23,7 +22,7 @@ class AlarmScheduler(private val context: Context) {
             return
         }
 
-        val triggerTime = calculateNextTriggerTime(alarm.timeHour, alarm.timeMin, alarm.daysOfWeek)
+        val triggerTime = AlarmUtils.calculateNextTriggerTime(alarm.timeHour, alarm.timeMin, alarm.daysOfWeek)
         val pendingIntent = createPendingIntent(alarm)
 
         try {
@@ -34,8 +33,6 @@ class AlarmScheduler(private val context: Context) {
             Log.d(TAG, "Scheduled alarm ${alarm.id} for ${alarm.timeHour}:${String.format("%02d", alarm.timeMin)} (trigger: $triggerTime)")
         } catch (e: SecurityException) {
             Log.e(TAG, "Failed to schedule exact alarm. Missing SCHEDULE_EXACT_ALARM permission.", e)
-            // Ideally, we should notify the UI to prompt the user to grant this permission in settings.
-            // For now, we fallback to a non-exact alarm if possible, or just fail gracefully.
         }
     }
 
@@ -47,63 +44,17 @@ class AlarmScheduler(private val context: Context) {
     }
 
     private fun createPendingIntent(alarm: AlarmEntity): PendingIntent {
-        val intent = Intent(context, com.hotbell.radio.ui.wakeup.WakeUpActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        val intent = Intent(context, com.hotbell.radio.alarms.AlarmReceiver::class.java).apply {
             putExtra("EXTRA_ALARM_ID", alarm.id)
             putExtra("EXTRA_STATION_UUID", alarm.stationUuid)
             putExtra("EXTRA_STATION_NAME", alarm.stationName)
+            putExtra("EXTRA_STATION_URL", alarm.stationUrl)
         }
-        return PendingIntent.getActivity(
+        return PendingIntent.getBroadcast(
             context,
             alarm.id.hashCode(),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-    }
-
-    private fun calculateNextTriggerTime(hour: Int, minute: Int, daysOfWeek: Int): Long {
-        val now = Calendar.getInstance()
-        val alarm = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, hour)
-            set(Calendar.MINUTE, minute)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-
-        // Drop seconds/millis from 'now' to allow setting an alarm for the current minute without skipping to tomorrow
-        val nowMinute = Calendar.getInstance().apply {
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-
-        if (daysOfWeek == 0) {
-            // One-time alarm: if time already passed today (comparing only up to minute precision), set for tomorrow
-            if (alarm.before(nowMinute)) {
-                alarm.add(Calendar.DAY_OF_MONTH, 1)
-            }
-            Log.d(TAG, "Calculated one-time alarm for timeInMillis: ${alarm.timeInMillis}")
-            return alarm.timeInMillis
-        }
-
-        // Repeating alarm: find the next matching day
-        for (i in 0..6) {
-            val candidate = Calendar.getInstance().apply {
-                timeInMillis = alarm.timeInMillis
-                add(Calendar.DAY_OF_MONTH, i)
-            }
-            // Calendar: SUNDAY=1, MONDAY=2, ..., SATURDAY=7
-            // Our bitmask: bit 0=Sunday, bit 1=Monday, ..., bit 6=Saturday
-            val dayBit = candidate.get(Calendar.DAY_OF_WEEK) - 1
-            if (daysOfWeek and (1 shl dayBit) != 0) {
-                if (i == 0 && candidate.before(nowMinute)) continue
-                Log.d(TAG, "Calculated repeating alarm for timeInMillis: ${candidate.timeInMillis}")
-                return candidate.timeInMillis
-            }
-        }
-
-        // Fallback: set for tomorrow
-        alarm.add(Calendar.DAY_OF_MONTH, 1)
-        Log.d(TAG, "Calculated fallback alarm for timeInMillis: ${alarm.timeInMillis}")
-        return alarm.timeInMillis
     }
 }

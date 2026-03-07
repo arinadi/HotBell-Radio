@@ -11,5 +11,6 @@ data class AlarmEntity(
     val daysOfWeek: Int, // Bitmask
     val isEnabled: Boolean,
     val stationUuid: String?,
-    val stationName: String?
+    val stationName: String?,
+    val stationUrl: String?
 )

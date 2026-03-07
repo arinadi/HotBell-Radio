@@ -63,6 +63,13 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.style.TextAlign
+import androidx.core.content.ContextCompat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,9 +80,12 @@ fun HomeScreen(
     onExploreRadio: () -> Unit
 ) {
     val alarms by viewModel.alarms.collectAsState()
+    val favorites by viewModel.favorites.collectAsState()
+    val countdowns by viewModel.alarmCountdowns.collectAsState()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    var showPermissionsDialog by remember { mutableStateOf(false) }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -95,21 +105,19 @@ fun HomeScreen(
                 NavigationDrawerItem(
                     label = { Text("Setup Permissions", color = Color.White) },
                     selected = false,
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            val intent = Intent().apply {
-                                action = Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
-                                data = Uri.fromParts("package", context.packageName, null)
-                            }
-                            context.startActivity(intent)
-                        }
-                    },
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            showPermissionsDialog = true
+                        },
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
             }
         }
     ) {
+        if (showPermissionsDialog) {
+            PermissionsDialog(onDismiss = { showPermissionsDialog = false })
+        }
+
         Scaffold(
             containerColor = PitchBlack,
             topBar = {
@@ -172,10 +180,32 @@ fun HomeScreen(
                         items(alarms, key = { it.id }) { alarm ->
                             AlarmCard(
                                 alarm = alarm,
+                                countdown = countdowns[alarm.id],
                                 onToggle = { viewModel.toggleAlarm(alarm) },
                                 onEdit = { onEditAlarm(alarm.id) },
                                 onDelete = { viewModel.deleteAlarm(alarm) }
                             )
+                        }
+
+                        if (favorites.isNotEmpty()) {
+                            item {
+                                Spacer(modifier = Modifier.height(24.dp))
+                                Text(
+                                    text = "Favorite Stations",
+                                    color = ElectricBlue,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(bottom = 12.dp)
+                                )
+                            }
+
+                            items(favorites, key = { it.stationUuid }) { station ->
+                                FavoriteStationCard(
+                                    station = station,
+                                    onPlay = { viewModel.playFavoriteStation(station) },
+                                    onStop = { viewModel.stopRadio() }
+                                )
+                            }
                         }
                     }
                 }
@@ -187,6 +217,7 @@ fun HomeScreen(
 @Composable
 private fun AlarmCard(
     alarm: AlarmEntity,
+    countdown: String?,
     onToggle: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
@@ -221,6 +252,14 @@ private fun AlarmCard(
                     color = if (alarm.isEnabled) NeonRed else DarkGray,
                     fontSize = 13.sp
                 )
+                if (alarm.isEnabled && countdown != null) {
+                    Text(
+                        text = "Ring in: $countdown",
+                        color = ElectricBlue.copy(alpha = 0.8f),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
                 if (alarm.daysOfWeek != 0) {
                     Text(
                         text = daysToString(alarm.daysOfWeek),
@@ -254,4 +293,161 @@ private fun AlarmCard(
 private fun daysToString(bitmask: Int): String {
     val days = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
     return days.filterIndexed { index, _ -> bitmask and (1 shl index) != 0 }.joinToString(", ")
+}
+
+@Composable
+fun FavoriteStationCard(
+    station: com.hotbell.radio.data.FavoriteStationEntity,
+    onPlay: () -> Unit,
+    onStop: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = DarkGray.copy(alpha = 0.2f)),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = station.name,
+                    color = Color.White,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = station.codec,
+                    color = Color.Gray,
+                    fontSize = 11.sp
+                )
+            }
+            IconButton(onClick = onStop) {
+                Text(text = "⏹", color = Color.White)
+            }
+            IconButton(onClick = onPlay) {
+                Text(text = "▶", color = ElectricBlue)
+            }
+        }
+    }
+}
+
+@Composable
+fun PermissionsDialog(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as? android.app.AlarmManager
+    val notificationManager = context.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as? android.app.NotificationManager
+
+    val hasNotificationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+    } else true
+
+    val hasExactAlarmPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        alarmManager?.canScheduleExactAlarms() == true
+    } else true
+
+    val hasFullScreenIntentPermission = if (Build.VERSION.SDK_INT >= 34) {
+        notificationManager?.canUseFullScreenIntent() == true
+    } else true
+    
+    // Auto-dismiss if all permissions are granted
+    if (hasNotificationPermission && hasExactAlarmPermission && hasFullScreenIntentPermission) {
+       onDismiss()
+    }
+
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = PitchBlack)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "App Permissions",
+                    color = ElectricBlue,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                Text(
+                    text = "HotBell needs the following permissions to ensure your alarms ring on time.",
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
+
+                if (!hasNotificationPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    PermissionItem(
+                        title = "Notifications",
+                        description = "Needed to show alarms and controls.",
+                        onClick = {
+                            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                            }
+                            context.startActivity(intent)
+                        }
+                    )
+                }
+
+                if (!hasExactAlarmPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    PermissionItem(
+                        title = "Exact Alarms",
+                        description = "Needed to trigger the alarm precisely on time.",
+                        onClick = {
+                            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                                data = Uri.fromParts("package", context.packageName, null)
+                            }
+                            context.startActivity(intent)
+                        }
+                    )
+                }
+
+                if (!hasFullScreenIntentPermission && Build.VERSION.SDK_INT >= 34) {
+                    PermissionItem(
+                        title = "Full Screen Intent",
+                        description = "Needed to wake up the screen when the alarm rings.",
+                        onClick = {
+                            val intent = Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
+                                data = Uri.fromParts("package", context.packageName, null)
+                            }
+                            context.startActivity(intent)
+                        }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+                TextButton(onClick = onDismiss) {
+                    Text("Close", color = NeonRed)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PermissionItem(title: String, description: String, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = DarkGray.copy(alpha = 0.3f))
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(text = title, color = ElectricBlue, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(text = description, color = Color.Gray, fontSize = 12.sp)
+            Text(text = "TAP TO GRANT", color = NeonRed, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
+        }
+    }
 }

@@ -31,11 +31,32 @@ import com.hotbell.radio.ui.theme.HotBellTheme
 import com.hotbell.radio.ui.theme.PitchBlack
 import android.app.AlarmManager
 import android.content.Context
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Debug: Check DB contents
+        lifecycleScope.launch {
+            try {
+                val db = com.hotbell.radio.data.AppDatabase.getInstance(applicationContext)
+                val stations = db.favoriteStationDao().getAllOnce()
+                android.util.Log.d("MainActivity", "DEBUG DB: Favorite Stations count = ${stations.size}")
+                stations.forEach { 
+                    android.util.Log.d("MainActivity", "DEBUG DB: Station UUID=${it.stationUuid}, Name=${it.name}, Url=${it.urlResolved}")
+                }
+                val alarms = db.alarmDao().getAllOnce()
+                android.util.Log.d("MainActivity", "DEBUG DB: Alarms count = ${alarms.size}")
+                alarms.forEach {
+                    android.util.Log.d("MainActivity", "DEBUG DB: Alarm id=${it.id}, StationUuid=${it.stationUuid}, name=${it.stationName}")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("MainActivity", "DEBUG DB Error", e)
+            }
+        }
         
         checkExactAlarmPermission()
 
@@ -81,12 +102,29 @@ class MainActivity : ComponentActivity() {
                                 viewModel = radioViewModel,
                                 isSelectMode = isSelectMode,
                                 onStationSelected = { station ->
+                                    // Save to DB so WakeUpViewModel can find it (lookup by UUID)
+                                    lifecycleScope.launch {
+                                        val db = com.hotbell.radio.data.AppDatabase.getInstance(applicationContext)
+                                        db.favoriteStationDao().insert(
+                                            com.hotbell.radio.data.FavoriteStationEntity(
+                                                stationUuid = station.stationUuid,
+                                                name = station.name,
+                                                urlResolved = station.urlResolved,
+                                                favicon = station.favicon ?: "",
+                                                codec = station.codec ?: ""
+                                            )
+                                        )
+                                    }
+
                                     navController.previousBackStackEntry
                                         ?.savedStateHandle
                                         ?.set("selected_station_uuid", station.stationUuid)
                                     navController.previousBackStackEntry
                                         ?.savedStateHandle
                                         ?.set("selected_station_name", station.name)
+                                    navController.previousBackStackEntry
+                                        ?.savedStateHandle
+                                        ?.set("selected_station_url", station.urlResolved)
                                     com.hotbell.radio.player.RadioPlayerManager.stop(applicationContext)
                                     navController.popBackStack()
                                 },
@@ -112,15 +150,18 @@ class MainActivity : ComponentActivity() {
                             val savedStateHandle = backStackEntry.savedStateHandle
                             val selectedUuidResult = savedStateHandle.getStateFlow<String?>("selected_station_uuid", null)
                             val selectedNameResult = savedStateHandle.getStateFlow<String?>("selected_station_name", null)
+                            val selectedUrlResult = savedStateHandle.getStateFlow<String?>("selected_station_url", null)
 
                             val selectedUuid by selectedUuidResult.collectAsState()
                             val selectedName by selectedNameResult.collectAsState()
+                            val selectedUrl by selectedUrlResult.collectAsState()
 
-                            LaunchedEffect(selectedUuid, selectedName) {
-                                if (selectedUuid != null && selectedName != null) {
-                                    alarmEditViewModel.setStation(selectedUuid!!, selectedName!!)
+                            LaunchedEffect(selectedUuid, selectedName, selectedUrl) {
+                                if (selectedUuid != null && selectedName != null && selectedUrl != null) {
+                                    alarmEditViewModel.setStation(selectedUuid!!, selectedName!!, selectedUrl!!)
                                     savedStateHandle.remove<String>("selected_station_uuid")
                                     savedStateHandle.remove<String>("selected_station_name")
+                                    savedStateHandle.remove<String>("selected_station_url")
                                 }
                             }
 

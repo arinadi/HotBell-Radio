@@ -1,0 +1,2 @@
+- berikan feedback saat menekan tombol jawaban quiz. animasi button dan getaran selama 3 detik. salah benar berikan feedback berbeda, seperti layar flashing atau yang lain.
+- buat suara alarm naik berkala hingga boost 150% dalam 1 menit.

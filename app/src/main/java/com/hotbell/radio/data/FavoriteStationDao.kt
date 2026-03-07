@@ -13,6 +13,9 @@ interface FavoriteStationDao {
     @Query("SELECT * FROM favorite_stations ORDER BY name ASC")
     fun getAll(): Flow<List<FavoriteStationEntity>>
 
+    @Query("SELECT * FROM favorite_stations")
+    suspend fun getAllOnce(): List<FavoriteStationEntity>
+
     @Query("SELECT * FROM favorite_stations WHERE stationUuid = :uuid")
     suspend fun getByUuid(uuid: String): FavoriteStationEntity?
 

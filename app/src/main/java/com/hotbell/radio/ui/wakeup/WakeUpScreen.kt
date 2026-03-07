@@ -8,6 +8,8 @@ import android.os.VibratorManager
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.repeatable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -43,17 +46,20 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hotbell.radio.ui.theme.DarkGray
 import com.hotbell.radio.ui.theme.ElectricBlue
 import com.hotbell.radio.ui.theme.NeonRed
 import com.hotbell.radio.ui.theme.PitchBlack
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.roundToInt
 
 @Composable
 fun WakeUpScreen(
@@ -76,14 +82,32 @@ fun WakeUpScreen(
     val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
     val dateFormat = SimpleDateFormat("EEEE, MMM dd", Locale.getDefault())
 
+    var flashColor by remember { mutableStateOf(Color.Transparent) }
+    val coroutineScope = rememberCoroutineScope()
+
+    val colors = listOf(
+        Color(0xFFE53935), // Red
+        Color(0xFF1E88E5), // Blue
+        Color(0xFF43A047), // Green
+        Color(0xFFFFB300)  // Amber
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(PitchBlack)
-            .padding(24.dp)
     ) {
+        // Flash overlay
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(flashColor)
+        )
+
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
@@ -183,17 +207,31 @@ fun WakeUpScreen(
                         text = challenge.options[0].toString(),
                         isCorrect = challenge.correctIndex == 0,
                         context = context,
+                        baseColor = colors[0],
                         modifier = Modifier.weight(1f),
-                        onSuccess = { viewModel.dismissAlarm(onDismissed) },
-                        onFail = { viewModel.generateNewChallenge() }
+                        onSuccess = { 
+                            handleSuccess(coroutineScope) { flashColor = it }
+                            viewModel.dismissAlarm(onDismissed) 
+                        },
+                        onFail = { 
+                            handleFail(coroutineScope, context) { flashColor = it }
+                            viewModel.generateNewChallenge() 
+                        }
                     )
                     ChallengeButton(
                         text = challenge.options[1].toString(),
                         isCorrect = challenge.correctIndex == 1,
                         context = context,
+                        baseColor = colors[1],
                         modifier = Modifier.weight(1f),
-                        onSuccess = { viewModel.dismissAlarm(onDismissed) },
-                        onFail = { viewModel.generateNewChallenge() }
+                        onSuccess = { 
+                            handleSuccess(coroutineScope) { flashColor = it }
+                            viewModel.dismissAlarm(onDismissed) 
+                        },
+                        onFail = { 
+                            handleFail(coroutineScope, context) { flashColor = it }
+                            viewModel.generateNewChallenge() 
+                        }
                     )
                 }
                 Row(
@@ -204,17 +242,31 @@ fun WakeUpScreen(
                         text = challenge.options[2].toString(),
                         isCorrect = challenge.correctIndex == 2,
                         context = context,
+                        baseColor = colors[2],
                         modifier = Modifier.weight(1f),
-                        onSuccess = { viewModel.dismissAlarm(onDismissed) },
-                        onFail = { viewModel.generateNewChallenge() }
+                        onSuccess = { 
+                            handleSuccess(coroutineScope) { flashColor = it }
+                            viewModel.dismissAlarm(onDismissed) 
+                        },
+                        onFail = { 
+                            handleFail(coroutineScope, context) { flashColor = it }
+                            viewModel.generateNewChallenge() 
+                        }
                     )
                     ChallengeButton(
                         text = challenge.options[3].toString(),
                         isCorrect = challenge.correctIndex == 3,
                         context = context,
+                        baseColor = colors[3],
                         modifier = Modifier.weight(1f),
-                        onSuccess = { viewModel.dismissAlarm(onDismissed) },
-                        onFail = { viewModel.generateNewChallenge() }
+                        onSuccess = { 
+                            handleSuccess(coroutineScope) { flashColor = it }
+                            viewModel.dismissAlarm(onDismissed) 
+                        },
+                        onFail = { 
+                            handleFail(coroutineScope, context) { flashColor = it }
+                            viewModel.generateNewChallenge() 
+                        }
                     )
                 }
             }
@@ -227,18 +279,21 @@ private fun ChallengeButton(
     text: String,
     isCorrect: Boolean,
     context: Context,
+    baseColor: Color,
     modifier: Modifier = Modifier,
     onSuccess: () -> Unit,
     onFail: () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
     val progressAnim = remember { Animatable(0f) }
+    val shakeOffset = remember { Animatable(0f) }
 
     Box(
         modifier = modifier
+            .offset { IntOffset(shakeOffset.value.roundToInt(), 0) }
             .height(80.dp)
             .clip(RoundedCornerShape(20.dp))
-            .background(DarkGray)
+            .background(baseColor.copy(alpha = 0.5f))
             .pointerInput(isCorrect, text) {
                 detectTapGestures(
                     onPress = {
@@ -269,7 +324,13 @@ private fun ChallengeButton(
                             }
                         } else {
                             tryAwaitRelease()
-                            vibrateDevice(context)
+                            coroutineScope.launch {
+                                shakeOffset.animateTo(
+                                    targetValue = 50f,
+                                    animationSpec = repeatable(iterations = 10, animation = tween(durationMillis = 30), repeatMode = RepeatMode.Reverse)
+                                )
+                                shakeOffset.snapTo(0f)
+                            }
                             onFail()
                         }
                     }
@@ -281,7 +342,7 @@ private fun ChallengeButton(
             modifier = Modifier
                 .fillMaxSize()
                 .fillMaxWidth(progressAnim.value)
-                .background(ElectricBlue)
+                .background(baseColor)
         )
         // Button Text
         Text(
@@ -295,7 +356,28 @@ private fun ChallengeButton(
     }
 }
 
-private fun vibrateDevice(context: Context) {
+private fun handleSuccess(scope: CoroutineScope, setFlashColor: (Color) -> Unit) {
+    scope.launch {
+        setFlashColor(Color.Green.copy(alpha = 0.5f))
+        delay(200)
+        setFlashColor(Color.Transparent)
+    }
+}
+
+private fun handleFail(scope: CoroutineScope, context: Context, setFlashColor: (Color) -> Unit) {
+    vibrateDevice(context, isError = true)
+    scope.launch {
+        setFlashColor(Color.Red.copy(alpha = 0.5f))
+        delay(100)
+        setFlashColor(Color.Transparent)
+        delay(100)
+        setFlashColor(Color.Red.copy(alpha = 0.5f))
+        delay(100)
+        setFlashColor(Color.Transparent)
+    }
+}
+
+private fun vibrateDevice(context: Context, isError: Boolean = false) {
     val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         val manager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
         manager.defaultVibrator
@@ -305,9 +387,19 @@ private fun vibrateDevice(context: Context) {
     }
     
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
+        if (isError) {
+            val amplitudes = intArrayOf(0, 255, 0, 255, 0, 255, 0, 255)
+            val timings = longArrayOf(0, 400, 100, 400, 100, 400, 100, 1500)
+            vibrator.vibrate(VibrationEffect.createWaveform(timings, amplitudes, -1))
+        } else {
+            vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
+        }
     } else {
         @Suppress("DEPRECATION")
-        vibrator.vibrate(200)
+        if (isError) {
+            vibrator.vibrate(longArrayOf(0, 400, 100, 400, 100, 400, 100, 1500), -1)
+        } else {
+             vibrator.vibrate(200)
+        }
     }
 }
