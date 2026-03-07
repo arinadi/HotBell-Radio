@@ -308,11 +308,33 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(4.dp))
+                
+                val versionName = context.packageManager.getPackageInfo(context.packageName, 0).versionName
                 Text(
-                    text = "Version 1.0.0",
+                    text = "Version $versionName",
                     color = Color.Gray,
                     fontSize = 14.sp
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                TextButton(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/arinadi/HotBell-Radio"))
+                        context.startActivity(intent)
+                    }
+                ) {
+                    Text("GitHub Repository", color = ElectricBlue)
+                }
+
+                Button(
+                    onClick = { viewModel.checkForUpdates(manual = true) },
+                    colors = ButtonDefaults.buttonColors(containerColor = HotBellOrange),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Text("Check for Updates", color = PitchBlack, fontWeight = FontWeight.Bold)
+                }
             }
         }
         

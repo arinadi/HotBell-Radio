@@ -47,9 +47,9 @@ android {
     signingConfigs {
         create("release") {
             storeFile = file("release.jks")
-            storePassword = System.getenv("SIGNING_STORE_PASSWORD") ?: "123456"
-            keyAlias = System.getenv("SIGNING_KEY_ALIAS") ?: "key"
-            keyPassword = System.getenv("SIGNING_KEY_PASSWORD") ?: "123456"
+            storePassword = System.getenv("SIGNING_STORE_PASSWORD") ?: "hotbell_password"
+            keyAlias = System.getenv("SIGNING_KEY_ALIAS") ?: "hotbell"
+            keyPassword = System.getenv("SIGNING_KEY_PASSWORD") ?: "hotbell_password"
         }
     }
 

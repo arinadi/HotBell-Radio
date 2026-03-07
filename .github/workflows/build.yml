@@ -44,12 +44,12 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build Release and Debug APKs
+      - name: Build Release APK
         env:
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
-        run: ./gradlew assembleRelease assembleDebug
+        run: ./gradlew assembleRelease --stacktrace
 
       - name: Calculate Version
         id: version
@@ -65,17 +65,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: HotBell-Radio-v${{ steps.version.outputs.VERSION_NAME }}
-          path: |
-            app/build/outputs/apk/release/*.apk
-            app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/release/*.apk
 
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            app/build/outputs/apk/release/*.apk
-            app/build/outputs/apk/debug/*.apk
+          files: app/build/outputs/apk/release/*.apk
           tag_name: v${{ steps.version.outputs.VERSION_NAME }}
           name: Release v${{ steps.version.outputs.VERSION_NAME }}
           prerelease: false
