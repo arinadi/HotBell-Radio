@@ -90,7 +90,6 @@ fun WakeUpScreen(
     val dismissType by viewModel.dismissType.collectAsState()
     val isVerifying by viewModel.isVerifying.collectAsState()
     val verificationResult by viewModel.verificationResult.collectAsState()
-    val targetPhotoPath by viewModel.targetPhotoPath.collectAsState()
 
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("hotbell_prefs", android.content.Context.MODE_PRIVATE) }
@@ -134,13 +133,6 @@ fun WakeUpScreen(
     var flashColor by remember { mutableStateOf(Color.Transparent) }
     val coroutineScope = rememberCoroutineScope()
 
-    val colors = listOf(
-        Color.White,
-        Color.White,
-        Color.White,
-        Color.White
-    )
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -163,14 +155,13 @@ fun WakeUpScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
+                .padding(vertical = 48.dp, horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             // Top Section (Time & Status)
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(top = 48.dp)
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = "WAKE UP!",
@@ -309,7 +300,8 @@ fun WakeUpScreen(
                 // MATH CHALLENGE UI
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.Center
                 ) {
                     Text(
                         text = "Brain Check to Dismiss",
@@ -344,12 +336,12 @@ fun WakeUpScreen(
                 }
 
                 // Bottom Section (Answer Grid)
+                val buttonColors = listOf(Color.White, Color.White, Color.White, Color.White)
+                
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    val colors = listOf(ElectricBlue, NeonPink, Purple, HotBellOrange)
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -357,7 +349,7 @@ fun WakeUpScreen(
                         ChallengeButton(
                             text = challenge.options[0].toString(),
                             isCorrect = challenge.correctIndex == 0,
-                            baseColor = colors[0],
+                            baseColor = buttonColors[0],
                             holdDurationMs = holdDurationMs,
                             modifier = Modifier.weight(1f),
                             onSuccess = { 
@@ -372,7 +364,7 @@ fun WakeUpScreen(
                         ChallengeButton(
                             text = challenge.options[1].toString(),
                             isCorrect = challenge.correctIndex == 1,
-                            baseColor = colors[1],
+                            baseColor = buttonColors[1],
                             holdDurationMs = holdDurationMs,
                             modifier = Modifier.weight(1f),
                             onSuccess = { 
@@ -392,7 +384,7 @@ fun WakeUpScreen(
                         ChallengeButton(
                             text = challenge.options[2].toString(),
                             isCorrect = challenge.correctIndex == 2,
-                            baseColor = colors[2],
+                            baseColor = buttonColors[2],
                             holdDurationMs = holdDurationMs,
                             modifier = Modifier.weight(1f),
                             onSuccess = { 
@@ -407,7 +399,7 @@ fun WakeUpScreen(
                         ChallengeButton(
                             text = challenge.options[3].toString(),
                             isCorrect = challenge.correctIndex == 3,
-                            baseColor = colors[3],
+                            baseColor = buttonColors[3],
                             holdDurationMs = holdDurationMs,
                             modifier = Modifier.weight(1f),
                             onSuccess = { 
