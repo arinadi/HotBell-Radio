@@ -63,13 +63,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hotbell.radio.ui.theme.DarkGray
-import com.hotbell.radio.ui.theme.ElectricBlue
 import com.hotbell.radio.ui.theme.HotBellOrange
-import com.hotbell.radio.ui.theme.NeonPink
 import com.hotbell.radio.ui.theme.NeonRed
 import com.hotbell.radio.ui.theme.PitchBlack
-import com.hotbell.radio.ui.theme.Purple
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -84,7 +80,6 @@ fun WakeUpScreen(
     stationName: String?,
     onDismissed: () -> Unit
 ) {
-    // Prevent back navigation from dismissing the alarm
     BackHandler { }
 
     val challenge by viewModel.challenge.collectAsState()
@@ -102,7 +97,7 @@ fun WakeUpScreen(
 
     var tempPhotoUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var capturedPhotoPath by remember { mutableStateOf<String?>(null) }
-    
+
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture(),
         onResult = { success ->
@@ -144,7 +139,7 @@ fun WakeUpScreen(
                 Brush.verticalGradient(
                     colors = listOf(
                         HotBellOrange,
-                        Color(0xFFE65100) // Deep Orange
+                        Color(0xFFE65100)
                     )
                 )
             )
@@ -162,10 +157,8 @@ fun WakeUpScreen(
                 .padding(vertical = 32.dp, horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Top Section (Time & Status)
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+            // Top Section
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = "WAKE UP!",
                     color = Color.White,
@@ -186,7 +179,7 @@ fun WakeUpScreen(
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
                 )
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
 
                 if (isFallbackActive) {
@@ -197,7 +190,12 @@ fun WakeUpScreen(
                             .background(NeonRed.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
                             .padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
-                        Icon(Icons.Default.Warning, contentDescription = "Fallback", tint = NeonRed, modifier = Modifier.size(20.dp))
+                        Icon(
+                            Icons.Default.Warning,
+                            contentDescription = "Fallback",
+                            tint = NeonRed,
+                            modifier = Modifier.size(20.dp)
+                        )
                         Text(
                             text = " Playing Fallback Alarm",
                             color = NeonRed,
@@ -235,77 +233,83 @@ fun WakeUpScreen(
                 }
             }
 
-            // Middle Section (Dismiss Challenge)
+            // Middle Section
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    if (dismissType == "photo") {
-                // PHOTO MATCH UI
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = "Photo Match to Dismiss",
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    if (dismissType == "photo") {
+                        // PHOTO MATCH UI
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = "Photo Match to Dismiss",
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
 
-                    if (isVerifying) {
-                        CircularProgressIndicator(color = HotBellOrange)
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("Verifying with Gemini...", color = Color.White.copy(alpha = 0.7f))
-                    } else {
-                        // Show result if failed
-                        verificationResult?.let { result ->
-                            if (!result.match) {
+                            if (isVerifying) {
+                                CircularProgressIndicator(color = HotBellOrange)
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text("Verifying with Gemini...", color = Color.White.copy(alpha = 0.7f))
+                            } else {
+                                verificationResult?.let { result ->
+                                    if (!result.match) {
+                                        Text(
+                                            text = "Match Failed: ${result.reason}",
+                                            color = NeonRed,
+                                            fontSize = 14.sp,
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.8f)
+                                        .height(80.dp)
+                                        .clip(RoundedCornerShape(24.dp))
+                                        .background(HotBellOrange)
+                                        .clickable { launchCamera() },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            Icons.Default.CameraAlt,
+                                            contentDescription = null,
+                                            tint = Color.White
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "Take Photo",
+                                            color = Color.White,
+                                            fontSize = 20.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(16.dp))
                                 Text(
-                                    text = "Match Failed: ${result.reason}",
-                                    color = NeonRed,
+                                    text = "Take a picture matching your reference photo.",
+                                    color = Color.White.copy(alpha = 0.5f),
                                     fontSize = 14.sp,
                                     textAlign = TextAlign.Center,
-                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                                    modifier = Modifier.padding(horizontal = 32.dp)
                                 )
                             }
                         }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(0.8f)
-                                .height(80.dp)
-                                .clip(RoundedCornerShape(24.dp))
-                                .background(HotBellOrange)
-                                .clickable { launchCamera() },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Color.White)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Take Photo",
-                                    color = Color.White,
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Take a picture matching your reference photo.",
-                            color = Color.White.copy(alpha = 0.5f),
-                            fontSize = 14.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 32.dp)
-                        )
-                    }
-                }
                     } else {
                         // MATH CHALLENGE UI
                         Column(
@@ -328,116 +332,110 @@ fun WakeUpScreen(
                                 shape = RoundedCornerShape(24.dp)
                             ) {
                                 Box(
-                                    contentAlignment = Alignment.Center,  // ← ini kuncinya
+                                    contentAlignment = Alignment.Center,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(16.dp)
+                                        .padding(24.dp)
                                 ) {
                                     Column(
                                         horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.Center  // ← center vertikal
+                                        verticalArrangement = Arrangement.Center
                                     ) {
                                         Text(
                                             text = challenge.question,
                                             color = Color.White,
                                             fontSize = 40.sp,
                                             fontWeight = FontWeight.ExtraBold,
-                                            textAlign = TextAlign.Center
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier.fillMaxWidth()
                                         )
                                         Spacer(modifier = Modifier.height(8.dp))
                                         Text(
                                             text = "Hold the correct answer for 3 seconds",
                                             color = Color.White.copy(alpha = 0.6f),
                                             fontSize = 14.sp,
-                                            textAlign = TextAlign.Center
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier.fillMaxWidth()
                                         )
                                     }
                                 }
                             }
-                }
 
-                        // Bottom Section (Answer Grid)
-                        val buttonColors = listOf(Color.White, Color.White, Color.White, Color.White)
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        ChallengeButton(
-                            text = challenge.options[0].toString(),
-                            isCorrect = challenge.correctIndex == 0,
-                            baseColor = buttonColors[0],
-                            holdDurationMs = holdDurationMs,
-                            modifier = Modifier.weight(1f),
-                            onSuccess = { 
-                                handleSuccess(coroutineScope) { flashColor = it }
-                                viewModel.dismissAlarm(onDismissed) 
-                            },
-                            onFail = { 
-                                handleFail(coroutineScope, context) { flashColor = it }
-                                viewModel.generateNewChallenge() 
-                            }
-                        )
-                        ChallengeButton(
-                            text = challenge.options[1].toString(),
-                            isCorrect = challenge.correctIndex == 1,
-                            baseColor = buttonColors[1],
-                            holdDurationMs = holdDurationMs,
-                            modifier = Modifier.weight(1f),
-                            onSuccess = { 
-                                handleSuccess(coroutineScope) { flashColor = it }
-                                viewModel.dismissAlarm(onDismissed) 
-                            },
-                            onFail = { 
-                                handleFail(coroutineScope, context) { flashColor = it }
-                                viewModel.generateNewChallenge() 
-                            }
-                        )
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        ChallengeButton(
-                            text = challenge.options[2].toString(),
-                            isCorrect = challenge.correctIndex == 2,
-                            baseColor = buttonColors[2],
-                            holdDurationMs = holdDurationMs,
-                            modifier = Modifier.weight(1f),
-                            onSuccess = { 
-                                handleSuccess(coroutineScope) { flashColor = it }
-                                viewModel.dismissAlarm(onDismissed) 
-                            },
-                            onFail = { 
-                                handleFail(coroutineScope, context) { flashColor = it }
-                                viewModel.generateNewChallenge() 
-                            }
-                        )
-                        ChallengeButton(
-                            text = challenge.options[3].toString(),
-                            isCorrect = challenge.correctIndex == 3,
-                            baseColor = buttonColors[3],
-                            holdDurationMs = holdDurationMs,
-                            modifier = Modifier.weight(1f),
-                            onSuccess = { 
-                                handleSuccess(coroutineScope) { flashColor = it }
-                                viewModel.dismissAlarm(onDismissed) 
-                            },
-                            onFail = { 
-                                handleFail(coroutineScope, context) { flashColor = it }
-                                viewModel.generateNewChallenge() 
-                            }
-                        )
+                            // Answer Grid
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    ChallengeButton(
+                                        text = challenge.options[0].toString(),
+                                        isCorrect = challenge.correctIndex == 0,
+                                        holdDurationMs = holdDurationMs,
+                                        modifier = Modifier.weight(1f),
+                                        onSuccess = {
+                                            handleSuccess(coroutineScope) { flashColor = it }
+                                            viewModel.dismissAlarm(onDismissed)
+                                        },
+                                        onFail = {
+                                            handleFail(coroutineScope, context) { flashColor = it }
+                                            viewModel.generateNewChallenge()
+                                        }
+                                    )
+                                    ChallengeButton(
+                                        text = challenge.options[1].toString(),
+                                        isCorrect = challenge.correctIndex == 1,
+                                        holdDurationMs = holdDurationMs,
+                                        modifier = Modifier.weight(1f),
+                                        onSuccess = {
+                                            handleSuccess(coroutineScope) { flashColor = it }
+                                            viewModel.dismissAlarm(onDismissed)
+                                        },
+                                        onFail = {
+                                            handleFail(coroutineScope, context) { flashColor = it }
+                                            viewModel.generateNewChallenge()
+                                        }
+                                    )
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    ChallengeButton(
+                                        text = challenge.options[2].toString(),
+                                        isCorrect = challenge.correctIndex == 2,
+                                        holdDurationMs = holdDurationMs,
+                                        modifier = Modifier.weight(1f),
+                                        onSuccess = {
+                                            handleSuccess(coroutineScope) { flashColor = it }
+                                            viewModel.dismissAlarm(onDismissed)
+                                        },
+                                        onFail = {
+                                            handleFail(coroutineScope, context) { flashColor = it }
+                                            viewModel.generateNewChallenge()
+                                        }
+                                    )
+                                    ChallengeButton(
+                                        text = challenge.options[3].toString(),
+                                        isCorrect = challenge.correctIndex == 3,
+                                        holdDurationMs = holdDurationMs,
+                                        modifier = Modifier.weight(1f),
+                                        onSuccess = {
+                                            handleSuccess(coroutineScope) { flashColor = it }
+                                            viewModel.dismissAlarm(onDismissed)
+                                        },
+                                        onFail = {
+                                            handleFail(coroutineScope, context) { flashColor = it }
+                                            viewModel.generateNewChallenge()
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
-
                 }
             }
 
@@ -450,9 +448,7 @@ fun WakeUpScreen(
                         .height(50.dp)
                         .clip(RoundedCornerShape(16.dp))
                         .background(Color.White.copy(alpha = 0.08f))
-                        .clickable {
-                            viewModel.snoozeAlarm { onDismissed() }
-                        },
+                        .clickable { viewModel.snoozeAlarm { onDismissed() } },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -471,7 +467,6 @@ fun WakeUpScreen(
 private fun ChallengeButton(
     text: String,
     isCorrect: Boolean,
-    baseColor: Color,
     modifier: Modifier = Modifier,
     holdDurationMs: Int = 3000,
     onSuccess: () -> Unit,
@@ -486,33 +481,35 @@ private fun ChallengeButton(
             .offset { IntOffset(shakeOffset.value.roundToInt(), 0) }
             .height(80.dp)
             .clip(RoundedCornerShape(20.dp))
-            .background(baseColor.copy(alpha = 0.3f))
+            .background(Color.White.copy(alpha = 0.15f))
             .pointerInput(isCorrect, text) {
                 detectTapGestures(
                     onPress = {
                         if (isCorrect) {
                             try {
-                                // Start filling animation
                                 val job = coroutineScope.launch {
                                     progressAnim.animateTo(
                                         targetValue = 1f,
-                                        animationSpec = tween(durationMillis = holdDurationMs, easing = LinearEasing)
+                                        animationSpec = tween(
+                                            durationMillis = holdDurationMs,
+                                            easing = LinearEasing
+                                        )
                                     )
-                                    if (progressAnim.value == 1f) {
+                                    if (progressAnim.value >= 1f) {
                                         onSuccess()
                                     }
                                 }
-                                tryAwaitRelease() // Wait for release
+                                tryAwaitRelease()
                                 job.cancel()
-                                // If released before 100%, animate back to 0
-                                coroutineScope.launch {
-                                    progressAnim.animateTo(
-                                        targetValue = 0f,
-                                        animationSpec = tween(durationMillis = 300)
-                                    )
+                                if (progressAnim.value < 1f) {
+                                    coroutineScope.launch {
+                                        progressAnim.animateTo(
+                                            targetValue = 0f,
+                                            animationSpec = tween(durationMillis = 300)
+                                        )
+                                    }
                                 }
-                            } finally {
-                                // Fallback just in case
+                            } catch (e: Exception) {
                                 coroutineScope.launch { progressAnim.snapTo(0f) }
                             }
                         } else {
@@ -520,7 +517,11 @@ private fun ChallengeButton(
                             coroutineScope.launch {
                                 shakeOffset.animateTo(
                                     targetValue = 50f,
-                                    animationSpec = repeatable(iterations = 10, animation = tween(durationMillis = 30), repeatMode = RepeatMode.Reverse)
+                                    animationSpec = repeatable(
+                                        iterations = 10,
+                                        animation = tween(durationMillis = 30),
+                                        repeatMode = RepeatMode.Reverse
+                                    )
                                 )
                                 shakeOffset.snapTo(0f)
                             }
@@ -530,22 +531,37 @@ private fun ChallengeButton(
                 )
             }
     ) {
-        // Progress Fill Background
+        // Progress fill — Box terpisah agar fillMaxWidth(fraction) bekerja
         Box(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxHeight()
                 .fillMaxWidth(progressAnim.value)
-                .background(baseColor)
+                .background(Color(0xFF4CAF50).copy(alpha = 0.85f))
         )
-        // Button Text
+
+        // Teks jawaban
         Text(
             text = text,
-            color = PitchBlack,
+            color = Color.White,
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
             modifier = Modifier.align(Alignment.Center)
         )
+
+        // Circular progress indicator saat ditahan
+        if (progressAnim.value > 0f) {
+            CircularProgressIndicator(
+                progress = { progressAnim.value },
+                modifier = Modifier
+                    .size(28.dp)
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 6.dp, bottom = 6.dp),
+                color = Color.White,
+                strokeWidth = 2.5.dp,
+                trackColor = Color.White.copy(alpha = 0.2f)
+            )
+        }
     }
 }
 
@@ -578,7 +594,7 @@ private fun vibrateDevice(context: Context, isError: Boolean = false) {
         @Suppress("DEPRECATION")
         context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
     }
-    
+
     if (isError) {
         val amplitudes = intArrayOf(0, 255, 0, 255, 0, 255, 0, 255)
         val timings = longArrayOf(0, 400, 100, 400, 100, 400, 100, 1500)
@@ -590,14 +606,14 @@ private fun vibrateDevice(context: Context, isError: Boolean = false) {
 
 @Composable
 fun VisualEqualizer() {
-    val infiniteTransition = rememberInfiniteTransition()
+    val infiniteTransition = rememberInfiniteTransition(label = "equalizer")
     Row(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.Bottom,
         modifier = Modifier.height(24.dp)
     ) {
         for (i in 0 until 4) {
-            val h = infiniteTransition.animateFloat(
+            val h by infiniteTransition.animateFloat(
                 initialValue = 0.3f,
                 targetValue = 1f,
                 animationSpec = infiniteRepeatable(
@@ -609,7 +625,7 @@ fun VisualEqualizer() {
             Box(
                 modifier = Modifier
                     .width(4.dp)
-                    .fillMaxHeight(h.value)
+                    .fillMaxHeight(h)
                     .background(Color.White, RoundedCornerShape(2.dp))
             )
         }
