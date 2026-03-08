@@ -155,9 +155,8 @@ fun WakeUpScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(vertical = 48.dp, horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+                .padding(vertical = 32.dp, horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Top Section (Time & Status)
             Column(
@@ -166,25 +165,25 @@ fun WakeUpScreen(
                 Text(
                     text = "WAKE UP!",
                     color = Color.White,
-                    fontSize = 36.sp,
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 4.sp
                 )
                 Text(
                     text = timeFormat.format(Date(currentTime)),
                     color = Color.White,
-                    fontSize = 72.sp,
+                    fontSize = 64.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp
                 )
                 Text(
                     text = dateFormat.format(Date(currentTime)),
                     color = Color.White.copy(alpha = 0.8f),
-                    fontSize = 20.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
                 )
                 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 if (isFallbackActive) {
                     Row(
@@ -206,7 +205,7 @@ fun WakeUpScreen(
                     Text(
                         text = "Radio: ${stationName ?: "Unknown Station"}",
                         color = Color.White.copy(alpha = 0.9f),
-                        fontSize = 18.sp
+                        fontSize = 16.sp
                     )
                 }
             }
@@ -215,7 +214,7 @@ fun WakeUpScreen(
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.2f)),
                 shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.padding(vertical = 16.dp)
+                modifier = Modifier.padding(vertical = 12.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -233,7 +232,14 @@ fun WakeUpScreen(
             }
 
             // Middle Section (Dismiss Challenge)
-            if (dismissType == "photo") {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (dismissType == "photo") {
                 // PHOTO MATCH UI
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -296,13 +302,13 @@ fun WakeUpScreen(
                         )
                     }
                 }
-            } else {
-                // MATH CHALLENGE UI
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.Center
-                ) {
+                    } else {
+                        // MATH CHALLENGE UI
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.Center
+                        ) {
                     Text(
                         text = "Brain Check to Dismiss",
                         color = Color.White,
@@ -316,13 +322,13 @@ fun WakeUpScreen(
                         shape = RoundedCornerShape(24.dp)
                     ) {
                         Column(
-                            modifier = Modifier.padding(24.dp),
+                            modifier = Modifier.padding(16.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
                                 text = challenge.question,
                                 color = Color.White,
-                                fontSize = 48.sp,
+                                fontSize = 40.sp,
                                 fontWeight = FontWeight.ExtraBold
                             )
                             Spacer(modifier = Modifier.height(8.dp))
@@ -335,16 +341,18 @@ fun WakeUpScreen(
                     }
                 }
 
-                // Bottom Section (Answer Grid)
-                val buttonColors = listOf(Color.White, Color.White, Color.White, Color.White)
-                
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
+                        // Bottom Section (Answer Grid)
+                        val buttonColors = listOf(Color.White, Color.White, Color.White, Color.White)
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         ChallengeButton(
                             text = challenge.options[0].toString(),
@@ -379,7 +387,7 @@ fun WakeUpScreen(
                     }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         ChallengeButton(
                             text = challenge.options[2].toString(),
@@ -411,32 +419,34 @@ fun WakeUpScreen(
                                 viewModel.generateNewChallenge() 
                             }
                         )
+                            }
+                        }
+                    }
+
+                    // Snooze Button
+                    if (canSnooze) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color.White.copy(alpha = 0.08f))
+                                .clickable {
+                                    viewModel.snoozeAlarm { onDismissed() }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "\uD83D\uDCA4 Snooze ($snoozeRemaining left)",
+                                color = Color.White.copy(alpha = 0.7f),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                 }
             }
-
-            // Snooze Button
-            if (canSnooze) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color.White.copy(alpha = 0.08f))
-                            .clickable {
-                                viewModel.snoozeAlarm { onDismissed() }
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "\uD83D\uDCA4 Snooze ($snoozeRemaining left)",
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
             }
         }
     }
