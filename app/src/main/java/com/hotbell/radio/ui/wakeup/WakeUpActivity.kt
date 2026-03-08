@@ -10,6 +10,10 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import android.view.KeyEvent
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hotbell.radio.ui.theme.HotBellTheme
 import com.hotbell.radio.ui.theme.PitchBlack
@@ -21,6 +25,7 @@ class WakeUpActivity : ComponentActivity() {
         
         setupLockScreenBypass()
         turnScreenOnAndKeyguardOff()
+        hideSystemUI()
 
         val stationUuid = intent.getStringExtra("EXTRA_STATION_UUID")
         val stationName = intent.getStringExtra("EXTRA_STATION_NAME")
@@ -83,6 +88,34 @@ class WakeUpActivity : ComponentActivity() {
                 "HotBell:AlarmWakelockTag"
             )
             wakeLock.acquire(3 * 60 * 1000L /*3 minutes*/)
+        }
+    }
+
+    private fun hideSystemUI() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowInsetsControllerCompat(window, window.decorView).let { controller ->
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        return when (keyCode) {
+            KeyEvent.KEYCODE_VOLUME_UP,
+            KeyEvent.KEYCODE_VOLUME_DOWN,
+            KeyEvent.KEYCODE_POWER,
+            KeyEvent.KEYCODE_CAMERA -> true // Consume event
+            else -> super.onKeyDown(keyCode, event)
+        }
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        return when (keyCode) {
+            KeyEvent.KEYCODE_VOLUME_UP,
+            KeyEvent.KEYCODE_VOLUME_DOWN,
+            KeyEvent.KEYCODE_POWER,
+            KeyEvent.KEYCODE_CAMERA -> true // Consume event
+            else -> super.onKeyUp(keyCode, event)
         }
     }
 }

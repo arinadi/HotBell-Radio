@@ -20,6 +20,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
 import java.io.File
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -83,6 +84,9 @@ fun WakeUpScreen(
     stationName: String?,
     onDismissed: () -> Unit
 ) {
+    // Prevent back navigation from dismissing the alarm
+    BackHandler { }
+
     val challenge by viewModel.challenge.collectAsState()
     val isFallbackActive by viewModel.isFallbackActive.collectAsState()
     val canSnooze by viewModel.canSnooze.collectAsState()
@@ -309,36 +313,47 @@ fun WakeUpScreen(
                             modifier = Modifier.fillMaxWidth(),
                             verticalArrangement = Arrangement.Center
                         ) {
-                    Text(
-                        text = "Brain Check to Dismiss",
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.2f)),
-                        shape = RoundedCornerShape(24.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
                             Text(
-                                text = challenge.question,
+                                text = "Brain Check to Dismiss",
                                 color = Color.White,
-                                fontSize = 40.sp,
-                                fontWeight = FontWeight.ExtraBold
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
                             )
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Hold the correct answer for 3 seconds",
-                                color = Color.White.copy(alpha = 0.6f),
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.2f)),
+                                shape = RoundedCornerShape(24.dp)
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,  // ← ini kuncinya
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp)
+                                ) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center  // ← center vertikal
+                                    ) {
+                                        Text(
+                                            text = challenge.question,
+                                            color = Color.White,
+                                            fontSize = 40.sp,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            textAlign = TextAlign.Center
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = "Hold the correct answer for 3 seconds",
+                                            color = Color.White.copy(alpha = 0.6f),
+                                            fontSize = 14.sp,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
+                            }
                 }
 
                         // Bottom Section (Answer Grid)
