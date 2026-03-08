@@ -423,33 +423,34 @@ fun WakeUpScreen(
                         }
                     }
 
-                    // Snooze Button
-                    if (canSnooze) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(50.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Color.White.copy(alpha = 0.08f))
-                                .clickable {
-                                    viewModel.snoozeAlarm { onDismissed() }
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "\uD83D\uDCA4 Snooze ($snoozeRemaining left)",
-                                color = Color.White.copy(alpha = 0.7f),
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
                 }
             }
+
+            // Snooze Button
+            if (canSnooze) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White.copy(alpha = 0.08f))
+                        .clickable {
+                            viewModel.snoozeAlarm { onDismissed() }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "\uD83D\uDCA4 Snooze ($snoozeRemaining left)",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
     }
+}
 
 @Composable
 private fun ChallengeButton(
