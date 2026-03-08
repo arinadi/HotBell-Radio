@@ -150,6 +150,11 @@ class MainActivity : ComponentActivity() {
                             FavoritesScreen()
                         }
 
+                        // Stats Screen
+                        composable(Route.Stats.route) {
+                            com.hotbell.radio.ui.stats.StatsScreen()
+                        }
+
                         // Settings Screen
                         composable(Route.Settings.route) {
                             SettingsScreen()

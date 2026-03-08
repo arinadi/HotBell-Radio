@@ -18,5 +18,9 @@ data class AlarmEntity(
     val snoozeDurationMin: Int = 5,
     val maxSnoozeCount: Int = 3,
     val autoDismissMin: Int = 10,
-    val skipNext: Boolean = false
+    val skipNext: Boolean = false,
+    
+    // Phase 7: Photo Match Challenge
+    val dismissType: String = "math", // "math" or "photo"
+    val targetPhotoPath: String? = null
 )

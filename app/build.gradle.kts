@@ -129,5 +129,10 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+    
+    // Extended Icons
     implementation("androidx.compose.material:material-icons-extended")
+
+    // Gemini Generative AI SDK
+    implementation("com.google.ai.client.generativeai:generativeai:0.8.0")
 }

@@ -68,6 +68,8 @@
             android:exported="true"
             android:permission="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+        <receiver android:name=".alarms.BedtimeReceiver" android:exported="false" />
+
         <!-- Boot Receiver -->
         <receiver
             android:name=".alarms.BootReceiver"

@@ -14,6 +14,8 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.hotbell.radio.data.AlarmLogEntity
+import com.hotbell.radio.data.AppDatabase
 import com.hotbell.radio.player.PlaybackState
 import com.hotbell.radio.player.RadioPlayerManager
 import kotlinx.coroutines.Job
@@ -26,7 +28,9 @@ import kotlinx.coroutines.launch
 class WakeUpViewModel(application: Application) : AndroidViewModel(application) {
 
     private val ringtoneFallbackManager = RingtoneFallbackManager(application)
+    private val alarmLogDao = AppDatabase.getInstance(application).alarmLogDao()
     private var vibrator: Vibrator? = null
+    private var alarmFiredTime: Long = 0L
     
     private val _challenge = MutableStateFlow(MathChallengeGenerator.generate())
     val challenge: StateFlow<MathChallenge> = _challenge.asStateFlow()
@@ -47,8 +51,7 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
     private val _snoozeCountRemaining = MutableStateFlow(3)
     val snoozeCountRemaining: StateFlow<Int> = _snoozeCountRemaining.asStateFlow()
 
-    // Context saved from startAlarm for snooze re-scheduling
-    private var alarmContext: Context? = null
+    // Station info saved from startAlarm for snooze re-scheduling
     private var alarmStationUuid: String? = null
     private var alarmStationName: String? = null
     private var alarmStationUrl: String? = null
@@ -56,6 +59,19 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
     private var flashlightJob: Job? = null
 
     private var fallbackTimeoutJob: Job? = null
+
+    // Photo Match
+    private val _dismissType = MutableStateFlow("math")
+    val dismissType: StateFlow<String> = _dismissType.asStateFlow()
+
+    private val _targetPhotoPath = MutableStateFlow<String?>(null)
+    val targetPhotoPath: StateFlow<String?> = _targetPhotoPath.asStateFlow()
+
+    private val _verificationResult = MutableStateFlow<com.hotbell.radio.alarms.VerificationResult?>(null)
+    val verificationResult: StateFlow<com.hotbell.radio.alarms.VerificationResult?> = _verificationResult.asStateFlow()
+
+    private val _isVerifying = MutableStateFlow(false)
+    val isVerifying: StateFlow<Boolean> = _isVerifying.asStateFlow()
 
     init {
         // Monitor playback state to stop fallback if radio eventually successfully plays
@@ -74,11 +90,19 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
     fun startAlarm(context: Context, stationUuid: String?, stationName: String?, stationUrl: String? = null) {
         android.util.Log.d("WakeUpViewModel", "startAlarm called with stationUuid=$stationUuid, stationName=$stationName, stationUrl=$stationUrl")
 
-        // Save context for snooze
-        alarmContext = context
+        // Save station info for snooze
         alarmStationUuid = stationUuid
         alarmStationName = stationName
         alarmStationUrl = stationUrl
+        alarmFiredTime = System.currentTimeMillis()
+
+        // Log fired event
+        viewModelScope.launch {
+            alarmLogDao.insert(AlarmLogEntity(
+                alarmId = stationUuid ?: "unknown",
+                eventType = "fired"
+            ))
+        }
 
         // Start continuous vibration if enabled in settings
         val prefs = getApplication<Application>().getSharedPreferences("hotbell_prefs", Context.MODE_PRIVATE)
@@ -166,7 +190,36 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
         autoDismissJob = viewModelScope.launch {
             delay(autoDismiss * 60 * 1000L)
             android.util.Log.d("WakeUpViewModel", "Auto-dismiss triggered after $autoDismiss minutes")
+            alarmLogDao.insert(AlarmLogEntity(
+                alarmId = alarmStationUuid ?: "unknown",
+                eventType = "auto_dismissed",
+                responseTimeMs = System.currentTimeMillis() - alarmFiredTime
+            ))
             dismissAlarm {}
+        }
+    }
+
+    fun configureDismissType(type: String, targetPath: String?) {
+        _dismissType.value = type
+        _targetPhotoPath.value = targetPath
+    }
+
+    fun verifyPhoto(capturedImagePath: String) {
+        val apiKey = getApplication<Application>().getSharedPreferences("hotbell_prefs", Context.MODE_PRIVATE)
+            .getString("gemini_api_key", "") ?: ""
+        
+        val verifier = com.hotbell.radio.alarms.GeminiVerifier(apiKey)
+        _isVerifying.value = true
+        _verificationResult.value = null
+
+        viewModelScope.launch {
+            val result = verifier.verifyMatch(_targetPhotoPath.value ?: "", capturedImagePath)
+            _verificationResult.value = result
+            _isVerifying.value = false
+            
+            if (result.match) {
+                dismissAlarm {}
+            }
         }
     }
 
@@ -178,6 +231,15 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
 
         android.util.Log.d("WakeUpViewModel", "Snoozing alarm ($currentSnoozeCount/$maxSnoozeCount) for $snoozeDurationMin min")
 
+        // Log snoozed event
+        viewModelScope.launch {
+            alarmLogDao.insert(AlarmLogEntity(
+                alarmId = alarmStationUuid ?: "unknown",
+                eventType = "snoozed",
+                responseTimeMs = System.currentTimeMillis() - alarmFiredTime
+            ))
+        }
+
         // Stop current alarm
         vibrator?.cancel()
         flashlightJob?.cancel()
@@ -188,7 +250,7 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
         stopFallback()
 
         // Schedule snooze via AlarmManager
-        val context = alarmContext ?: getApplication<Application>()
+        val context = getApplication<Application>() as Context
         val snoozeIntent = Intent(context, com.hotbell.radio.alarms.AlarmReceiver::class.java).apply {
             putExtra("EXTRA_ALARM_ID", "SNOOZE_${System.currentTimeMillis()}")
             putExtra("EXTRA_STATION_UUID", alarmStationUuid ?: "")
@@ -219,6 +281,20 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
 
     fun dismissAlarm(onDismissed: () -> Unit) {
         android.util.Log.d("WakeUpViewModel", "Dismissing alarm")
+
+        // Log dismissed event with response time
+        val responseTime = System.currentTimeMillis() - alarmFiredTime
+        if (alarmFiredTime > 0) {
+            viewModelScope.launch {
+                alarmLogDao.insert(AlarmLogEntity(
+                    alarmId = alarmStationUuid ?: "unknown",
+                    eventType = "dismissed",
+                    responseTimeMs = responseTime
+                ))
+            }
+            alarmFiredTime = 0L
+        }
+
         vibrator?.cancel()
         flashlightJob?.cancel()
         stopFlashlight()

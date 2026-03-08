@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -24,6 +25,7 @@ fun BottomNavigationBar(navController: NavController) {
         BottomNavItem("Alarms", Route.Home.route, Icons.Default.Notifications),
         BottomNavItem("Explore", Route.RadioExplorer.create("general"), Icons.Default.Search),
         BottomNavItem("Favorites", Route.Favorites.route, Icons.Default.Favorite),
+        BottomNavItem("Stats", Route.Stats.route, Icons.Default.BarChart),
         BottomNavItem("Settings", Route.Settings.route, Icons.Default.Settings)
     )
 

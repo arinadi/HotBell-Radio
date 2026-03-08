@@ -86,101 +86,101 @@ fun HomeScreen(
     val countdowns by viewModel.alarmCountdowns.collectAsState()
     val context = LocalContext.current
 
-        Scaffold(
-            containerColor = PitchBlack,
-            floatingActionButton = {
-                FloatingActionButton(
-                    onClick = onAddAlarm,
-                    containerColor = HotBellOrange,
-                    shape = CircleShape
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Alarm", tint = Color.White)
-                }
-            }
-        ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(horizontal = 16.dp)
+    Scaffold(
+        containerColor = PitchBlack,
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onAddAlarm,
+                containerColor = HotBellOrange,
+                shape = CircleShape
             ) {
-                Spacer(modifier = Modifier.height(32.dp))
-                
-                // Custom Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Row {
-                            Text(
-                                text = "HotBell",
-                                color = Color.White,
-                                fontSize = 36.sp,
-                                fontWeight = FontWeight.ExtraBold
-                            )
-                            Text(
-                                text = ".",
-                                color = HotBellOrange,
-                                fontSize = 36.sp,
-                                fontWeight = FontWeight.ExtraBold
-                            )
-                        }
-                        
-                        val nextAlarmStr = countdowns.values.firstOrNull() ?: "No active alarms"
+                Icon(Icons.Default.Add, contentDescription = "Add Alarm", tint = Color.White)
+            }
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 16.dp)
+        ) {
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            // Custom Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Row {
                         Text(
-                            text = if (nextAlarmStr == "No active alarms") nextAlarmStr else "Next alarm in $nextAlarmStr",
-                            color = Color.Gray,
-                            fontSize = 14.sp
+                            text = "HotBell",
+                            color = Color.White,
+                            fontSize = 36.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        Text(
+                            text = ".",
+                            color = HotBellOrange,
+                            fontSize = 36.sp,
+                            fontWeight = FontWeight.ExtraBold
                         )
                     }
                     
-                    // TEST WAKE BUTTON
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(NeonRed.copy(alpha = 0.1f))
-                            .clickable {
-                                viewModel.testWake(context)
-                            }
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        Text("TEST WAKE", color = NeonRed, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    }
+                    val nextAlarmStr = countdowns.values.firstOrNull() ?: "No active alarms"
+                    Text(
+                        text = if (nextAlarmStr == "No active alarms") nextAlarmStr else "Next alarm in $nextAlarmStr",
+                        color = Color.Gray,
+                        fontSize = 14.sp
+                    )
                 }
                 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                if (alarms.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No alarms yet.\nTap + to add one.",
-                            color = DarkGray,
-                            fontSize = 16.sp
-                        )
-                    }
-                } else {
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(alarms, key = { it.id }) { alarm ->
-                            AlarmCard(
-                                alarm = alarm,
-                                countdown = countdowns[alarm.id],
-                                onToggle = { viewModel.toggleAlarm(alarm) },
-                                onEdit = { onEditAlarm(alarm.id) },
-                                onDelete = { viewModel.deleteAlarm(alarm) },
-                                onSkipNext = { viewModel.toggleSkipNext(alarm) }
-                            )
+                // TEST WAKE BUTTON
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(NeonRed.copy(alpha = 0.1f))
+                        .clickable {
+                            viewModel.testWake(context)
                         }
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text("TEST WAKE", color = NeonRed, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+
+            if (alarms.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No alarms yet.\nTap + to add one.",
+                        color = DarkGray,
+                        fontSize = 16.sp
+                    )
+                }
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(alarms, key = { it.id }) { alarm ->
+                        AlarmCard(
+                            alarm = alarm,
+                            countdown = countdowns[alarm.id],
+                            onToggle = { viewModel.toggleAlarm(alarm) },
+                            onEdit = { onEditAlarm(alarm.id) },
+                            onDelete = { viewModel.deleteAlarm(alarm) },
+                            onSkipNext = { viewModel.toggleSkipNext(alarm) }
+                        )
                     }
                 }
             }
         }
+    }
 }
 
 @Composable

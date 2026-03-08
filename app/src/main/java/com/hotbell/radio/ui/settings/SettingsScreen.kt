@@ -45,6 +45,16 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
     val maxBoost by viewModel.maxBoost.collectAsState()
     val crescendoSec by viewModel.crescendoSec.collectAsState()
     val dismissHoldSec by viewModel.dismissHoldSec.collectAsState()
+    
+    // Bedtime Reminder
+    val bedtimeEnabled by viewModel.bedtimeEnabled.collectAsState()
+    val bedtimeHour by viewModel.bedtimeHour.collectAsState()
+    val bedtimeMinute by viewModel.bedtimeMinute.collectAsState()
+    
+    // Gemini API Key
+    val geminiApiKey by viewModel.geminiApiKey.collectAsState()
+    
+    val context = LocalContext.current
     val scrollState = rememberScrollState()
 
     Column(
@@ -114,6 +124,87 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                         )
                     )
                 }
+
+                // Bedtime Reminder Section
+                HorizontalDivider(color = Color.White.copy(alpha = 0.05f), modifier = Modifier.padding(vertical = 12.dp))
+                
+                Text(
+                    "Bedtime Reminder",
+                    color = HotBellOrange,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("Remind me to sleep", color = Color.White, fontSize = 16.sp)
+                        val timeStr = String.format("%02d:%02d", bedtimeHour, bedtimeMinute)
+                        Text(
+                            text = if (bedtimeEnabled) "At $timeStr" else "Off",
+                            color = Color.Gray,
+                            fontSize = 14.sp,
+                            modifier = Modifier
+                                .clickable {
+                                    android.app.TimePickerDialog(
+                                        context,
+                                        { _, h, m -> viewModel.setBedtimeTime(h, m) },
+                                        bedtimeHour,
+                                        bedtimeMinute,
+                                        true
+                                    ).show()
+                                }
+                                .padding(vertical = 4.dp)
+                        )
+                    }
+                    Switch(
+                        checked = bedtimeEnabled,
+                        onCheckedChange = { viewModel.setBedtimeEnabled(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = HotBellOrange,
+                            uncheckedThumbColor = Color.Gray,
+                            uncheckedTrackColor = PitchBlack
+                        )
+                    )
+                }
+
+                HorizontalDivider(color = Color.White.copy(alpha = 0.05f), modifier = Modifier.padding(vertical = 12.dp))
+
+                // Gemini API Configuration
+                Text(
+                    "Gemini AI Configuration",
+                    color = HotBellOrange,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                Text(
+                    "Required for Photo Match Challenge. Your key is stored locally.",
+                    color = Color.Gray,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                OutlinedTextField(
+                    value = geminiApiKey,
+                    onValueChange = { viewModel.setGeminiApiKey(it) },
+                    label = { Text("Gemini API Key", color = Color.Gray) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = HotBellOrange,
+                        unfocusedBorderColor = DarkGray,
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        cursorColor = HotBellOrange
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 HorizontalDivider(color = Color.White.copy(alpha = 0.05f), modifier = Modifier.padding(vertical = 12.dp))
 

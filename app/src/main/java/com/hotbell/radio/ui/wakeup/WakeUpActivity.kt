@@ -28,6 +28,8 @@ class WakeUpActivity : ComponentActivity() {
         val snoozeDurationMin = intent.getIntExtra("EXTRA_SNOOZE_DURATION", 5)
         val maxSnoozeCount = intent.getIntExtra("EXTRA_MAX_SNOOZE", 3)
         val autoDismissMin = intent.getIntExtra("EXTRA_AUTO_DISMISS", 10)
+        val dismissType = intent.getStringExtra("EXTRA_DISMISS_TYPE") ?: "math"
+        val targetPhotoPath = intent.getStringExtra("EXTRA_TARGET_PHOTO_PATH")
 
         setContent {
             val viewModel: WakeUpViewModel = viewModel()
@@ -36,6 +38,7 @@ class WakeUpActivity : ComponentActivity() {
             androidx.compose.runtime.LaunchedEffect(Unit) {
                 viewModel.startAlarm(this@WakeUpActivity, stationUuid, stationName, stationUrl)
                 viewModel.configureSnooze(snoozeDurationMin, maxSnoozeCount, autoDismissMin)
+                viewModel.configureDismissType(dismissType, targetPhotoPath)
             }
 
             HotBellTheme {

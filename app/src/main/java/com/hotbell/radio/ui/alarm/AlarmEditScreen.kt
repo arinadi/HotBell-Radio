@@ -20,7 +20,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.FileProvider
 import com.hotbell.radio.ui.theme.*
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -40,9 +45,38 @@ fun AlarmEditScreen(
     val snoozeDurationMin by viewModel.snoozeDurationMin.collectAsState()
     val maxSnoozeCount by viewModel.maxSnoozeCount.collectAsState()
     val autoDismissMin by viewModel.autoDismissMin.collectAsState()
+    val dismissType by viewModel.dismissType.collectAsState()
+    val targetPhotoPath by viewModel.targetPhotoPath.collectAsState()
     val isLoaded by viewModel.isLoaded.collectAsState()
 
     val scrollState = rememberScrollState()
+    val context = LocalContext.current
+
+    // Camera Launcher for Photo Match Challenge
+    var tempPhotoUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+        onResult = { success ->
+            if (success) {
+                tempPhotoUri?.let { uri ->
+                    // Extract file path from URI (assuming we're using FileProvider)
+                    val file = File(context.cacheDir, uri.lastPathSegment ?: "target_photo.jpg")
+                    viewModel.setTargetPhotoPath(file.absolutePath)
+                }
+            }
+        }
+    )
+
+    fun launchCamera() {
+        val photoFile = File(context.cacheDir, "target_${System.currentTimeMillis()}.jpg")
+        val photoUri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.provider",
+            photoFile
+        )
+        tempPhotoUri = photoUri
+        cameraLauncher.launch(photoUri)
+    }
 
     LaunchedEffect(alarmId) {
         viewModel.loadAlarm(alarmId)
@@ -409,6 +443,86 @@ fun AlarmEditScreen(
                             }
                         }
                     }
+
+                    HorizontalDivider(
+                        color = Color.White.copy(alpha = 0.05f),
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+
+                    // Phase 7: Dismiss Type Row
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 24.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Dismiss Challenge", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text(if (dismissType == "photo") "Photo Match" else "Math Problem", color = DarkGray, fontSize = 12.sp)
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf("math", "photo").forEach { type ->
+                                val selected = dismissType == type
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (selected) HotBellOrange else DarkGray.copy(alpha = 0.3f))
+                                        .clickable { viewModel.setDismissType(type) }
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    val icon = if (type == "math") Icons.Default.Calculate else Icons.Default.CameraAlt
+                                    Icon(imageVector = icon, contentDescription = type, tint = if (selected) Color.White else Color.Gray, modifier = Modifier.size(24.dp))
+                                }
+                            }
+                        }
+                    }
+
+                    // Photo Match Target Config
+                    if (dismissType == "photo") {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .clickable { launchCamera() },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .background(HotBellOrange.copy(alpha = 0.1f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CameraAlt,
+                                    contentDescription = null,
+                                    tint = HotBellOrange,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = if (targetPhotoPath == null) "Set Target Photo" else "Update Target Photo",
+                                    color = Color.White,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = if (targetPhotoPath == null) "Required to configure alarm" else "Photo captured & saved",
+                                    color = if (targetPhotoPath == null) NeonRed else DarkGray,
+                                    fontSize = 12.sp
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = Color.Gray
+                            )
+                        }
+                    }
+
                 }
             }
 

@@ -30,6 +30,8 @@ class AlarmReceiver : BroadcastReceiver() {
         val snoozeDurationMin = intent.getIntExtra("EXTRA_SNOOZE_DURATION", 5)
         val maxSnoozeCount = intent.getIntExtra("EXTRA_MAX_SNOOZE", 3)
         val autoDismissMin = intent.getIntExtra("EXTRA_AUTO_DISMISS", 10)
+        val dismissType = intent.getStringExtra("EXTRA_DISMISS_TYPE") ?: "math"
+        val targetPhotoPath = intent.getStringExtra("EXTRA_TARGET_PHOTO_PATH")
 
         Log.d(TAG, "Alarm fired via Broadcast! id=$alarmId, station=$stationName")
 
@@ -52,7 +54,7 @@ class AlarmReceiver : BroadcastReceiver() {
 
             // Fire the alarm
             fireAlarm(context, alarmId, stationUuid, stationName, stationUrl,
-                snoozeDurationMin, maxSnoozeCount, autoDismissMin)
+                snoozeDurationMin, maxSnoozeCount, autoDismissMin, dismissType, targetPhotoPath)
             pendingResult.finish()
         }
     }
@@ -65,7 +67,9 @@ class AlarmReceiver : BroadcastReceiver() {
         stationUrl: String?,
         snoozeDurationMin: Int,
         maxSnoozeCount: Int,
-        autoDismissMin: Int
+        autoDismissMin: Int,
+        dismissType: String,
+        targetPhotoPath: String?
     ) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -83,6 +87,8 @@ class AlarmReceiver : BroadcastReceiver() {
             putExtra("EXTRA_SNOOZE_DURATION", snoozeDurationMin)
             putExtra("EXTRA_MAX_SNOOZE", maxSnoozeCount)
             putExtra("EXTRA_AUTO_DISMISS", autoDismissMin)
+            putExtra("EXTRA_DISMISS_TYPE", dismissType)
+            putExtra("EXTRA_TARGET_PHOTO_PATH", targetPhotoPath)
         }
 
         val fullScreenPendingIntent = PendingIntent.getActivity(

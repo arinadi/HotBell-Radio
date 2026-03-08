@@ -1,14 +1,14 @@
-Snooze duration & max count — sangat umum dan user pasti expect
-Auto-dismiss timeout — keamanan agar alarm tidak bunyi tanpa batas
-Alarm label — basic tapi penting
-Flashlight blink — efektif bangunin orang, mudah implement
+# HotBell Radio — Feature Roadmap
 
-Alarm statistics (rata-rata waktu bangun)
-Bedtime reminder
+## ✅ Done
+- [x] Configurable start/max volumes, crescendo duration, dismiss hold time
+- [x] Snooze duration & max count — per-alarm config
+- [x] Auto-dismiss timeout — per-alarm config
+- [x] Alarm label — shown in AlarmCard
+- [x] Skip next occurrence — inline toggle in AlarmCard
+- [x] Flashlight blink — toggle in Settings, torch blinks on wake
 
-Label/nama alarm
-Skip next occurrence
-
-Photo match (foto lokasi tertentu)	gunakan gemini-2.5-flash bring your own key
-
-Configurable start/max volumes
+## 🔲 Planned
+- [ ] Alarm statistics (avg wake time, dismiss rate)
+- [ ] Bedtime reminder
+- [ ] Photo match challenge (foto lokasi) — Gemini 2.5 Flash, bring your own key

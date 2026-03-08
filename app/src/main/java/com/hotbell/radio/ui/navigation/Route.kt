@@ -7,6 +7,7 @@ sealed class Route(val route: String) {
     }
     data object Favorites : Route("favorites")
     data object Settings : Route("settings")
+    data object Stats : Route("stats")
     data object AlarmEdit : Route("alarm_edit?alarmId={alarmId}") {
         fun create(alarmId: String? = null) =
             if (alarmId != null) "alarm_edit?alarmId=$alarmId" else "alarm_edit"

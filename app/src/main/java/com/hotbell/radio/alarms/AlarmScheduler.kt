@@ -52,6 +52,8 @@ class AlarmScheduler(private val context: Context) {
             putExtra("EXTRA_SNOOZE_DURATION", alarm.snoozeDurationMin)
             putExtra("EXTRA_MAX_SNOOZE", alarm.maxSnoozeCount)
             putExtra("EXTRA_AUTO_DISMISS", alarm.autoDismissMin)
+            putExtra("EXTRA_DISMISS_TYPE", alarm.dismissType)
+            putExtra("EXTRA_TARGET_PHOTO_PATH", alarm.targetPhotoPath)
         }
         return PendingIntent.getBroadcast(
             context,

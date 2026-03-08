@@ -16,6 +16,10 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.FileProvider
+import java.io.File
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,8 +36,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -59,8 +65,10 @@ import androidx.compose.ui.unit.sp
 import com.hotbell.radio.ui.theme.DarkGray
 import com.hotbell.radio.ui.theme.ElectricBlue
 import com.hotbell.radio.ui.theme.HotBellOrange
+import com.hotbell.radio.ui.theme.NeonPink
 import com.hotbell.radio.ui.theme.NeonRed
 import com.hotbell.radio.ui.theme.PitchBlack
+import com.hotbell.radio.ui.theme.Purple
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -79,10 +87,39 @@ fun WakeUpScreen(
     val isFallbackActive by viewModel.isFallbackActive.collectAsState()
     val canSnooze by viewModel.canSnooze.collectAsState()
     val snoozeRemaining by viewModel.snoozeCountRemaining.collectAsState()
+    val dismissType by viewModel.dismissType.collectAsState()
+    val isVerifying by viewModel.isVerifying.collectAsState()
+    val verificationResult by viewModel.verificationResult.collectAsState()
+    val targetPhotoPath by viewModel.targetPhotoPath.collectAsState()
+
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("hotbell_prefs", android.content.Context.MODE_PRIVATE) }
     val holdDurationMs = remember { prefs.getInt("alarm_dismiss_hold_sec", 3) * 1000 }
     var currentTime by remember { androidx.compose.runtime.mutableLongStateOf(System.currentTimeMillis()) }
+
+    var tempPhotoUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var capturedPhotoPath by remember { mutableStateOf<String?>(null) }
+    
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+        onResult = { success ->
+            if (success && capturedPhotoPath != null) {
+                viewModel.verifyPhoto(capturedPhotoPath!!)
+            }
+        }
+    )
+
+    fun launchCamera() {
+        val photoFile = File(context.cacheDir, "verify_${System.currentTimeMillis()}.jpg")
+        capturedPhotoPath = photoFile.absolutePath
+        val photoUri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.provider",
+            photoFile
+        )
+        tempPhotoUri = photoUri
+        cameraLauncher.launch(photoUri)
+    }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -204,121 +241,190 @@ fun WakeUpScreen(
                 }
             }
 
-            // Middle Section (Math Challenge)
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Brain Check to Dismiss",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.2f)),
-                    shape = RoundedCornerShape(24.dp)
+            // Middle Section (Dismiss Challenge)
+            if (dismissType == "photo") {
+                // PHOTO MATCH UI
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
+                    Text(
+                        text = "Photo Match to Dismiss",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    if (isVerifying) {
+                        CircularProgressIndicator(color = HotBellOrange)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Verifying with Gemini...", color = Color.White.copy(alpha = 0.7f))
+                    } else {
+                        // Show result if failed
+                        verificationResult?.let { result ->
+                            if (!result.match) {
+                                Text(
+                                    text = "Match Failed: ${result.reason}",
+                                    color = NeonRed,
+                                    fontSize = 14.sp,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(0.8f)
+                                .height(80.dp)
+                                .clip(RoundedCornerShape(24.dp))
+                                .background(HotBellOrange)
+                                .clickable { launchCamera() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Color.White)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Take Photo",
+                                    color = Color.White,
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = challenge.question,
-                            color = Color.White,
-                            fontSize = 48.sp,
-                            fontWeight = FontWeight.ExtraBold
+                            text = "Take a picture matching your reference photo.",
+                            color = Color.White.copy(alpha = 0.5f),
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 32.dp)
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Hold the correct answer for 3 seconds",
-                            color = Color.White.copy(alpha = 0.6f),
-                            fontSize = 14.sp
+                    }
+                }
+            } else {
+                // MATH CHALLENGE UI
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Brain Check to Dismiss",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.2f)),
+                        shape = RoundedCornerShape(24.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = challenge.question,
+                                color = Color.White,
+                                fontSize = 48.sp,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Hold the correct answer for 3 seconds",
+                                color = Color.White.copy(alpha = 0.6f),
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+
+                // Bottom Section (Answer Grid)
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    val colors = listOf(ElectricBlue, NeonPink, Purple, HotBellOrange)
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        ChallengeButton(
+                            text = challenge.options[0].toString(),
+                            isCorrect = challenge.correctIndex == 0,
+                            baseColor = colors[0],
+                            holdDurationMs = holdDurationMs,
+                            modifier = Modifier.weight(1f),
+                            onSuccess = { 
+                                handleSuccess(coroutineScope) { flashColor = it }
+                                viewModel.dismissAlarm(onDismissed) 
+                            },
+                            onFail = { 
+                                handleFail(coroutineScope, context) { flashColor = it }
+                                viewModel.generateNewChallenge() 
+                            }
+                        )
+                        ChallengeButton(
+                            text = challenge.options[1].toString(),
+                            isCorrect = challenge.correctIndex == 1,
+                            baseColor = colors[1],
+                            holdDurationMs = holdDurationMs,
+                            modifier = Modifier.weight(1f),
+                            onSuccess = { 
+                                handleSuccess(coroutineScope) { flashColor = it }
+                                viewModel.dismissAlarm(onDismissed) 
+                            },
+                            onFail = { 
+                                handleFail(coroutineScope, context) { flashColor = it }
+                                viewModel.generateNewChallenge() 
+                            }
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        ChallengeButton(
+                            text = challenge.options[2].toString(),
+                            isCorrect = challenge.correctIndex == 2,
+                            baseColor = colors[2],
+                            holdDurationMs = holdDurationMs,
+                            modifier = Modifier.weight(1f),
+                            onSuccess = { 
+                                handleSuccess(coroutineScope) { flashColor = it }
+                                viewModel.dismissAlarm(onDismissed) 
+                            },
+                            onFail = { 
+                                handleFail(coroutineScope, context) { flashColor = it }
+                                viewModel.generateNewChallenge() 
+                            }
+                        )
+                        ChallengeButton(
+                            text = challenge.options[3].toString(),
+                            isCorrect = challenge.correctIndex == 3,
+                            baseColor = colors[3],
+                            holdDurationMs = holdDurationMs,
+                            modifier = Modifier.weight(1f),
+                            onSuccess = { 
+                                handleSuccess(coroutineScope) { flashColor = it }
+                                viewModel.dismissAlarm(onDismissed) 
+                            },
+                            onFail = { 
+                                handleFail(coroutineScope, context) { flashColor = it }
+                                viewModel.generateNewChallenge() 
+                            }
                         )
                     }
                 }
             }
 
-            // Bottom Section (Answer Grid)
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    ChallengeButton(
-                        text = challenge.options[0].toString(),
-                        isCorrect = challenge.correctIndex == 0,
-                        baseColor = colors[0],
-                        holdDurationMs = holdDurationMs,
-                        modifier = Modifier.weight(1f),
-                        onSuccess = { 
-                            handleSuccess(coroutineScope) { flashColor = it }
-                            viewModel.dismissAlarm(onDismissed) 
-                        },
-                        onFail = { 
-                            handleFail(coroutineScope, context) { flashColor = it }
-                            viewModel.generateNewChallenge() 
-                        }
-                    )
-                    ChallengeButton(
-                        text = challenge.options[1].toString(),
-                        isCorrect = challenge.correctIndex == 1,
-                        baseColor = colors[1],
-                        holdDurationMs = holdDurationMs,
-                        modifier = Modifier.weight(1f),
-                        onSuccess = { 
-                            handleSuccess(coroutineScope) { flashColor = it }
-                            viewModel.dismissAlarm(onDismissed) 
-                        },
-                        onFail = { 
-                            handleFail(coroutineScope, context) { flashColor = it }
-                            viewModel.generateNewChallenge() 
-                        }
-                    )
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    ChallengeButton(
-                        text = challenge.options[2].toString(),
-                        isCorrect = challenge.correctIndex == 2,
-                        baseColor = colors[2],
-                        holdDurationMs = holdDurationMs,
-                        modifier = Modifier.weight(1f),
-                        onSuccess = { 
-                            handleSuccess(coroutineScope) { flashColor = it }
-                            viewModel.dismissAlarm(onDismissed) 
-                        },
-                        onFail = { 
-                            handleFail(coroutineScope, context) { flashColor = it }
-                            viewModel.generateNewChallenge() 
-                        }
-                    )
-                    ChallengeButton(
-                        text = challenge.options[3].toString(),
-                        isCorrect = challenge.correctIndex == 3,
-                        baseColor = colors[3],
-                        holdDurationMs = holdDurationMs,
-                        modifier = Modifier.weight(1f),
-                        onSuccess = { 
-                            handleSuccess(coroutineScope) { flashColor = it }
-                            viewModel.dismissAlarm(onDismissed) 
-                        },
-                        onFail = { 
-                            handleFail(coroutineScope, context) { flashColor = it }
-                            viewModel.generateNewChallenge() 
-                        }
-                    )
-                }
-
-                // Snooze Button
-                if (canSnooze) {
+            // Snooze Button
+            if (canSnooze) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Box(
                         modifier = Modifier
@@ -342,15 +448,14 @@ fun WakeUpScreen(
             }
         }
     }
-}
 
 @Composable
 private fun ChallengeButton(
     text: String,
     isCorrect: Boolean,
     baseColor: Color,
-    holdDurationMs: Int = 3000,
     modifier: Modifier = Modifier,
+    holdDurationMs: Int = 3000,
     onSuccess: () -> Unit,
     onFail: () -> Unit
 ) {

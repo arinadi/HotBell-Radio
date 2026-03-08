@@ -5,11 +5,12 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [AlarmEntity::class, FavoriteStationEntity::class], version = 5, exportSchema = true)
+@Database(entities = [AlarmEntity::class, FavoriteStationEntity::class, AlarmLogEntity::class], version = 7, exportSchema = true)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun alarmDao(): AlarmDao
     abstract fun favoriteStationDao(): FavoriteStationDao
+    abstract fun alarmLogDao(): AlarmLogDao
 
     companion object {
         @Volatile

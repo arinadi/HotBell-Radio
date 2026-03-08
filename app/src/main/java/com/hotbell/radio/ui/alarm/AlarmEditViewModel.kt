@@ -57,6 +57,12 @@ class AlarmEditViewModel(application: Application) : AndroidViewModel(applicatio
     private val _autoDismissMin = MutableStateFlow(10)
     val autoDismissMin: StateFlow<Int> = _autoDismissMin.asStateFlow()
 
+    private val _dismissType = MutableStateFlow("math")
+    val dismissType: StateFlow<String> = _dismissType.asStateFlow()
+
+    private val _targetPhotoPath = MutableStateFlow<String?>(null)
+    val targetPhotoPath: StateFlow<String?> = _targetPhotoPath.asStateFlow()
+
     private var editingAlarmId: String? = null
 
     fun loadAlarm(alarmId: String?) {
@@ -79,6 +85,8 @@ class AlarmEditViewModel(application: Application) : AndroidViewModel(applicatio
                 _snoozeDurationMin.value = alarm.snoozeDurationMin
                 _maxSnoozeCount.value = alarm.maxSnoozeCount
                 _autoDismissMin.value = alarm.autoDismissMin
+                _dismissType.value = alarm.dismissType
+                _targetPhotoPath.value = alarm.targetPhotoPath
             }
             _isLoaded.value = true
         }
@@ -119,6 +127,14 @@ class AlarmEditViewModel(application: Application) : AndroidViewModel(applicatio
         _autoDismissMin.value = min
     }
 
+    fun setDismissType(type: String) {
+        _dismissType.value = type
+    }
+
+    fun setTargetPhotoPath(path: String?) {
+        _targetPhotoPath.value = path
+    }
+
     fun testAlarm(context: Context) {
         val intent = Intent(context, WakeUpActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -145,7 +161,9 @@ class AlarmEditViewModel(application: Application) : AndroidViewModel(applicatio
                 isVibrateEnabled = _isVibrateEnabled.value,
                 snoozeDurationMin = _snoozeDurationMin.value,
                 maxSnoozeCount = _maxSnoozeCount.value,
-                autoDismissMin = _autoDismissMin.value
+                autoDismissMin = _autoDismissMin.value,
+                dismissType = _dismissType.value,
+                targetPhotoPath = _targetPhotoPath.value
             )
             if (editingAlarmId != null) {
                 alarmRepository.updateAlarm(alarm)
