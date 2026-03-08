@@ -38,6 +38,9 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
     private val _isFallbackActive = MutableStateFlow(false)
     val isFallbackActive: StateFlow<Boolean> = _isFallbackActive.asStateFlow()
 
+    private val _isAlarmActive = MutableStateFlow(true)
+    val isAlarmActive: StateFlow<Boolean> = _isAlarmActive.asStateFlow()
+
     // Snooze config
     private var snoozeDurationMin = 5
     private var maxSnoozeCount = 3
@@ -230,6 +233,7 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
         _canSnooze.value = currentSnoozeCount < maxSnoozeCount
 
         android.util.Log.d("WakeUpViewModel", "Snoozing alarm ($currentSnoozeCount/$maxSnoozeCount) for $snoozeDurationMin min")
+        _isAlarmActive.value = false
 
         // Log snoozed event
         viewModelScope.launch {
@@ -281,6 +285,7 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
 
     fun dismissAlarm(onDismissed: () -> Unit) {
         android.util.Log.d("WakeUpViewModel", "Dismissing alarm")
+        _isAlarmActive.value = false
 
         // Log dismissed event with response time
         val responseTime = System.currentTimeMillis() - alarmFiredTime

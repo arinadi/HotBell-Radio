@@ -14,11 +14,14 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import android.view.KeyEvent
+import androidx.activity.viewModels
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hotbell.radio.ui.theme.HotBellTheme
 import com.hotbell.radio.ui.theme.PitchBlack
 
 class WakeUpActivity : ComponentActivity() {
+
+    private val viewModel: WakeUpViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,8 +40,6 @@ class WakeUpActivity : ComponentActivity() {
         val targetPhotoPath = intent.getStringExtra("EXTRA_TARGET_PHOTO_PATH")
 
         setContent {
-            val viewModel: WakeUpViewModel = viewModel()
-            
             // Trigger playback on launch
             androidx.compose.runtime.LaunchedEffect(Unit) {
                 viewModel.startAlarm(this@WakeUpActivity, stationUuid, stationName, stationUrl)
@@ -116,6 +117,16 @@ class WakeUpActivity : ComponentActivity() {
             KeyEvent.KEYCODE_POWER,
             KeyEvent.KEYCODE_CAMERA -> true // Consume event
             else -> super.onKeyUp(keyCode, event)
+        }
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (viewModel.isAlarmActive.value) {
+            // The user pressed Home or Recent Apps. Bring the activity back to the front immediately.
+            val i = android.content.Intent(this, WakeUpActivity::class.java)
+            i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            startActivity(i)
         }
     }
 }
