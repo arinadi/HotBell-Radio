@@ -40,12 +40,17 @@ class RadioPlaybackService : MediaSessionService() {
         val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
 
         private var _currentStationName: String = ""
+
+        // Sleep timer: remaining seconds (0 = inactive)
+        private val _sleepTimerRemaining = MutableStateFlow(0L)
+        val sleepTimerRemaining: StateFlow<Long> = _sleepTimerRemaining.asStateFlow()
     }
 
     private var mediaSession: MediaSession? = null
     private var player: ExoPlayer? = null
     private var loudnessEnhancer: LoudnessEnhancer? = null
     private var fadeJob: Job? = null
+    private var sleepTimerJob: Job? = null
     private val serviceScope = CoroutineScope(Dispatchers.Main)
 
     @OptIn(UnstableApi::class)
@@ -94,10 +99,16 @@ class RadioPlaybackService : MediaSessionService() {
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
-                    Log.e(TAG, "Player error: ${error.message}")
+                    Log.e(TAG, "Player error: ${error.message}", error)
                     _playbackState.value = PlaybackState.Error(
                         error.message ?: "Unknown playback error"
                     )
+                    // Gracefully stop to prevent FC on unknown stream types
+                    try {
+                        stopPlayback()
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error during cleanup after player error", e)
+                    }
                 }
             })
         }
@@ -126,6 +137,15 @@ class RadioPlaybackService : MediaSessionService() {
             "STOP" -> {
                 Log.d(TAG, "onStartCommand STOP")
                 stopPlayback()
+            }
+            "SLEEP_TIMER" -> {
+                val minutes = intent.getIntExtra("SLEEP_MINUTES", 0)
+                Log.d(TAG, "onStartCommand SLEEP_TIMER: $minutes min")
+                if (minutes > 0) startSleepTimer(minutes)
+            }
+            "CANCEL_SLEEP_TIMER" -> {
+                Log.d(TAG, "onStartCommand CANCEL_SLEEP_TIMER")
+                cancelSleepTimer()
             }
         }
         return super.onStartCommand(intent, flags, startId)
@@ -170,6 +190,8 @@ class RadioPlaybackService : MediaSessionService() {
 
     private fun stopPlayback() {
         fadeJob?.cancel()
+        sleepTimerJob?.cancel()
+        _sleepTimerRemaining.value = 0L
         loudnessEnhancer?.release()
         loudnessEnhancer = null
         player?.stop()
@@ -178,6 +200,26 @@ class RadioPlaybackService : MediaSessionService() {
         _currentStationName = ""
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
+    }
+
+    private fun startSleepTimer(minutes: Int) {
+        sleepTimerJob?.cancel()
+        val totalSeconds = minutes * 60L
+        _sleepTimerRemaining.value = totalSeconds
+        sleepTimerJob = serviceScope.launch {
+            for (i in totalSeconds downTo 1) {
+                _sleepTimerRemaining.value = i
+                delay(1000)
+            }
+            _sleepTimerRemaining.value = 0L
+            Log.d(TAG, "Sleep timer expired — stopping playback")
+            stopPlayback()
+        }
+    }
+
+    private fun cancelSleepTimer() {
+        sleepTimerJob?.cancel()
+        _sleepTimerRemaining.value = 0L
     }
 
     @OptIn(UnstableApi::class)
@@ -283,6 +325,8 @@ class RadioPlaybackService : MediaSessionService() {
 
     override fun onDestroy() {
         fadeJob?.cancel()
+        sleepTimerJob?.cancel()
+        _sleepTimerRemaining.value = 0L
         loudnessEnhancer?.release()
         mediaSession?.run {
             player.release()

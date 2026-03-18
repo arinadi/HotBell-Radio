@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.hotbell.radio.data.AppDatabase
 import com.hotbell.radio.data.FavoriteStationEntity
+import com.hotbell.radio.network.CountryModel
 import com.hotbell.radio.network.RadioRepository
 import com.hotbell.radio.network.StationNetworkModel
 import com.hotbell.radio.player.RadioPlayerManager
@@ -44,6 +45,9 @@ class RadioViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _selectedTag = MutableStateFlow<String?>(null)
     val selectedTag: StateFlow<String?> = _selectedTag.asStateFlow()
+
+    private val _searchedCountries = MutableStateFlow<List<CountryModel>>(emptyList())
+    val searchedCountries: StateFlow<List<CountryModel>> = _searchedCountries.asStateFlow()
 
     init {
         loadTopStations()
@@ -134,6 +138,20 @@ class RadioViewModel(application: Application) : AndroidViewModel(application) {
                         codec = station.codec ?: ""
                     )
                 )
+            }
+        }
+    }
+
+    fun searchCountries(query: String) {
+        if (query.isBlank()) {
+            _searchedCountries.value = emptyList()
+            return
+        }
+        viewModelScope.launch {
+            try {
+                _searchedCountries.value = radioRepository.searchCountries(query)
+            } catch (_: Exception) {
+                _searchedCountries.value = emptyList()
             }
         }
     }

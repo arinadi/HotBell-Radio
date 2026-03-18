@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -56,6 +57,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hotbell.radio.network.CountryModel
 import com.hotbell.radio.network.StationNetworkModel
 import com.hotbell.radio.player.PlaybackState
 import com.hotbell.radio.ui.theme.DarkGray
@@ -109,7 +111,9 @@ fun RadioExplorerScreen(
     val playbackState by viewModel.playbackState.collectAsState()
     val selectedCountry by viewModel.selectedCountry.collectAsState()
     val selectedTag by viewModel.selectedTag.collectAsState()
+    val searchedCountries by viewModel.searchedCountries.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
+    var countrySearchQuery by remember { mutableStateOf("") }
 
     val favoriteUuids = favorites.map { it.stationUuid }.toSet()
 
@@ -197,17 +201,101 @@ fun RadioExplorerScreen(
                     }
                     androidx.compose.material3.DropdownMenu(
                         expanded = countryMenuExpanded,
-                        onDismissRequest = { countryMenuExpanded = false },
-                        modifier = Modifier.background(DarkGray)
+                        onDismissRequest = {
+                            countryMenuExpanded = false
+                            countrySearchQuery = ""
+                            viewModel.searchCountries("")
+                        },
+                        modifier = Modifier
+                            .background(DarkGray)
+                            .heightIn(max = 350.dp)
                     ) {
-                        COUNTRY_FILTERS.forEach { (code, label) ->
+                        // Search TextField inside dropdown
+                        Box(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+                            OutlinedTextField(
+                                value = countrySearchQuery,
+                                onValueChange = {
+                                    countrySearchQuery = it
+                                    viewModel.searchCountries(it)
+                                },
+                                placeholder = { Text("Search country...", color = Color.Gray, fontSize = 13.sp) },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White,
+                                    cursorColor = HotBellOrange,
+                                    focusedBorderColor = HotBellOrange,
+                                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f)
+                                ),
+                                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp)
+                            )
+                        }
+
+                        if (countrySearchQuery.isBlank()) {
+                            // Show hardcoded defaults
+                            COUNTRY_FILTERS.forEach { (code, label) ->
+                                androidx.compose.material3.DropdownMenuItem(
+                                    text = { Text(label, color = Color.White) },
+                                    onClick = {
+                                        viewModel.setCountryFilter(code)
+                                        countryMenuExpanded = false
+                                        countrySearchQuery = ""
+                                        viewModel.searchCountries("")
+                                    }
+                                )
+                            }
+                        } else {
+                            // "All" option always available
                             androidx.compose.material3.DropdownMenuItem(
-                                text = { Text(label, color = Color.White) },
+                                text = { Text("All Countries", color = Color.White) },
                                 onClick = {
-                                    viewModel.setCountryFilter(code)
+                                    viewModel.setCountryFilter(null)
                                     countryMenuExpanded = false
+                                    countrySearchQuery = ""
+                                    viewModel.searchCountries("")
                                 }
                             )
+                            // Show API search results
+                            searchedCountries.forEach { country ->
+                                androidx.compose.material3.DropdownMenuItem(
+                                    text = {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = "${country.iso31661} ${country.name}",
+                                                color = Color.White,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                            Text(
+                                                text = "${country.stationCount}",
+                                                color = Color.Gray,
+                                                fontSize = 12.sp
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        viewModel.setCountryFilter(country.iso31661)
+                                        countryMenuExpanded = false
+                                        countrySearchQuery = ""
+                                        viewModel.searchCountries("")
+                                    }
+                                )
+                            }
+                            if (searchedCountries.isEmpty()) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("No countries found", color = Color.Gray, fontSize = 13.sp)
+                                }
+                            }
                         }
                     }
                 }

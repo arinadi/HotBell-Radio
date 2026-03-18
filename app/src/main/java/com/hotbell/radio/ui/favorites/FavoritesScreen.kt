@@ -68,7 +68,8 @@ fun FavoritesScreen(viewModel: HomeViewModel = viewModel()) {
                     items(favorites, key = { it.stationUuid }) { station ->
                         FavoriteStationCard(
                             station = station,
-                            onPlay = { viewModel.playFavoriteStation(station) }
+                            onPlay = { viewModel.playFavoriteStation(station) },
+                            onRemove = { viewModel.removeFavorite(station) }
                         )
                     }
                 }
@@ -80,7 +81,8 @@ fun FavoritesScreen(viewModel: HomeViewModel = viewModel()) {
 @Composable
 fun FavoriteStationCard(
     station: com.hotbell.radio.data.FavoriteStationEntity,
-    onPlay: () -> Unit
+    onPlay: () -> Unit,
+    onRemove: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onPlay() },
@@ -128,7 +130,7 @@ fun FavoriteStationCard(
                 }
             }
 
-            IconButton(onClick = { /* Unfavorite not handled here right now, or via long press */ }) {
+            IconButton(onClick = onRemove) {
                 Icon(
                     Icons.Default.Favorite,
                     contentDescription = "Favorite",

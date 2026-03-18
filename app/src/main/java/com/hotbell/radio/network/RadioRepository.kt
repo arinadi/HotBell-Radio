@@ -29,4 +29,11 @@ class RadioRepository(
     suspend fun registerClick(stationUuid: String): ClickResponse {
         return api.registerClick(stationUuid)
     }
+
+    suspend fun searchCountries(query: String): List<CountryModel> {
+        val all = api.getCountries()
+        return all.filter {
+            it.name.contains(query, ignoreCase = true) && it.stationCount >= 5
+        }
+    }
 }

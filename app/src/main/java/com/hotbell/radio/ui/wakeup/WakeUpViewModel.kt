@@ -1,6 +1,7 @@
 package com.hotbell.radio.ui.wakeup
 
 import android.app.Application
+import android.app.NotificationManager
 import android.content.Context
 import android.hardware.camera2.CameraManager
 import android.net.ConnectivityManager
@@ -62,6 +63,9 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
     private var flashlightJob: Job? = null
 
     private var fallbackTimeoutJob: Job? = null
+
+    // Alarm ID for notification cancellation (Fix #3)
+    private var alarmId: String = ""
 
     // Photo Match
     private val _dismissType = MutableStateFlow("math")
@@ -207,6 +211,23 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
         _targetPhotoPath.value = targetPath
     }
 
+    fun configureAlarmId(id: String) {
+        alarmId = id
+    }
+
+    private fun cancelAlarmNotification() {
+        if (alarmId.isNotEmpty()) {
+            try {
+                val nm = getApplication<Application>()
+                    .getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                nm.cancel(alarmId.hashCode())
+                android.util.Log.d("WakeUpViewModel", "Cancelled notification for alarm $alarmId")
+            } catch (e: Exception) {
+                android.util.Log.e("WakeUpViewModel", "Failed to cancel notification", e)
+            }
+        }
+    }
+
     fun verifyPhoto(capturedImagePath: String) {
         val apiKey = getApplication<Application>().getSharedPreferences("hotbell_prefs", Context.MODE_PRIVATE)
             .getString("gemini_api_key", "") ?: ""
@@ -252,6 +273,7 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
         fallbackTimeoutJob?.cancel()
         RadioPlayerManager.stop(getApplication())
         stopFallback()
+        cancelAlarmNotification()
 
         // Schedule snooze via AlarmManager
         val context = getApplication<Application>() as Context
@@ -307,6 +329,7 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
         fallbackTimeoutJob?.cancel()
         RadioPlayerManager.stop(getApplication())
         stopFallback()
+        cancelAlarmNotification()
         onDismissed()
     }
 

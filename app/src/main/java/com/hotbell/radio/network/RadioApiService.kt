@@ -31,4 +31,10 @@ interface RadioApiService {
     suspend fun registerClick(
         @Path("stationuuid") stationUuid: String
     ): ClickResponse
+
+    @GET("json/countries")
+    suspend fun getCountries(
+        @Query("order") order: String = "stationcount",
+        @Query("reverse") reverse: Boolean = true
+    ): List<CountryModel>
 }

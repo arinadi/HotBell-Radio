@@ -9,10 +9,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.NightsStay
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,12 +33,16 @@ import com.hotbell.radio.ui.theme.HotBellOrange
 import com.hotbell.radio.ui.theme.PitchBlack
 import com.hotbell.radio.ui.wakeup.VisualEqualizer
 
+private val SLEEP_TIMER_OPTIONS = listOf(15, 30, 45, 60, 90)
+
 @Composable
 fun NowPlayingBar() {
     val playbackState by RadioPlayerManager.playbackState.collectAsState()
+    val sleepTimerRemaining by RadioPlayerManager.sleepTimerRemaining.collectAsState()
     val context = LocalContext.current
 
     val isVisible = playbackState !is PlaybackState.Idle && playbackState !is PlaybackState.Error
+    var showSleepMenu by remember { mutableStateOf(false) }
 
     AnimatedVisibility(
         visible = isVisible,
@@ -108,7 +116,61 @@ fun NowPlayingBar() {
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
+                        // Show sleep timer countdown if active
+                        if (sleepTimerRemaining > 0) {
+                            val mins = sleepTimerRemaining / 60
+                            val secs = sleepTimerRemaining % 60
+                            Text(
+                                text = "\uD83C\uDF19 ${String.format("%d:%02d", mins, secs)}",
+                                color = Color(0xFF90CAF9),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
+
+                    // Sleep Timer Button
+                    Box {
+                        IconButton(
+                            onClick = {
+                                if (sleepTimerRemaining > 0) {
+                                    RadioPlayerManager.cancelSleepTimer(context)
+                                } else {
+                                    showSleepMenu = true
+                                }
+                            },
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(
+                                    if (sleepTimerRemaining > 0) Color(0xFF90CAF9).copy(alpha = 0.2f)
+                                    else Color.White.copy(alpha = 0.1f)
+                                )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.NightsStay,
+                                contentDescription = "Sleep Timer",
+                                tint = if (sleepTimerRemaining > 0) Color(0xFF90CAF9) else Color.Gray
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showSleepMenu,
+                            onDismissRequest = { showSleepMenu = false },
+                            modifier = Modifier.background(DarkGray)
+                        ) {
+                            SLEEP_TIMER_OPTIONS.forEach { minutes ->
+                                DropdownMenuItem(
+                                    text = { Text("$minutes min", color = Color.White) },
+                                    onClick = {
+                                        RadioPlayerManager.setSleepTimer(context, minutes)
+                                        showSleepMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
 
                     // Stop Button
                     IconButton(

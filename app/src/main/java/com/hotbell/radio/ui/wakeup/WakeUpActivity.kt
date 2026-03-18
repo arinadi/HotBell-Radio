@@ -30,6 +30,7 @@ class WakeUpActivity : ComponentActivity() {
         turnScreenOnAndKeyguardOff()
         hideSystemUI()
 
+        val alarmId = intent.getStringExtra("EXTRA_ALARM_ID") ?: ""
         val stationUuid = intent.getStringExtra("EXTRA_STATION_UUID")
         val stationName = intent.getStringExtra("EXTRA_STATION_NAME")
         val stationUrl = intent.getStringExtra("EXTRA_STATION_URL")
@@ -42,6 +43,7 @@ class WakeUpActivity : ComponentActivity() {
         setContent {
             // Trigger playback on launch
             androidx.compose.runtime.LaunchedEffect(Unit) {
+                viewModel.configureAlarmId(alarmId)
                 viewModel.startAlarm(this@WakeUpActivity, stationUuid, stationName, stationUrl)
                 viewModel.configureSnooze(snoozeDurationMin, maxSnoozeCount, autoDismissMin)
                 viewModel.configureDismissType(dismissType, targetPhotoPath)

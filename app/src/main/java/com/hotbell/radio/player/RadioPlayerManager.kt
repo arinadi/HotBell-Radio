@@ -9,6 +9,9 @@ object RadioPlayerManager {
     val playbackState: StateFlow<PlaybackState>
         get() = RadioPlaybackService.playbackState
 
+    val sleepTimerRemaining: StateFlow<Long>
+        get() = RadioPlaybackService.sleepTimerRemaining
+
     fun play(context: Context, streamUrl: String, stationName: String) {
         val intent = Intent(context, RadioPlaybackService::class.java).apply {
             action = "PLAY"
@@ -18,7 +21,6 @@ object RadioPlayerManager {
         try {
             context.startForegroundService(intent)
         } catch (e: Exception) {
-            // Catches ForegroundServiceStartNotAllowedException on Android 12+ or SecurityException
             android.util.Log.e("RadioPlayerManager", "Failed to start foreground service", e)
             try {
                 context.startService(intent)
@@ -31,6 +33,21 @@ object RadioPlayerManager {
     fun stop(context: Context) {
         val intent = Intent(context, RadioPlaybackService::class.java).apply {
             action = "STOP"
+        }
+        context.startService(intent)
+    }
+
+    fun setSleepTimer(context: Context, minutes: Int) {
+        val intent = Intent(context, RadioPlaybackService::class.java).apply {
+            action = "SLEEP_TIMER"
+            putExtra("SLEEP_MINUTES", minutes)
+        }
+        context.startService(intent)
+    }
+
+    fun cancelSleepTimer(context: Context) {
+        val intent = Intent(context, RadioPlaybackService::class.java).apply {
+            action = "CANCEL_SLEEP_TIMER"
         }
         context.startService(intent)
     }

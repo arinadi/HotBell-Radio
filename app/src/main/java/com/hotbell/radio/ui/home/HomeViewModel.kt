@@ -70,6 +70,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         com.hotbell.radio.player.RadioPlayerManager.stop(getApplication())
     }
 
+    fun removeFavorite(station: com.hotbell.radio.data.FavoriteStationEntity) {
+        viewModelScope.launch {
+            db.favoriteStationDao().deleteByUuid(station.stationUuid)
+        }
+    }
+
     fun testWake(context: android.content.Context) {
         viewModelScope.launch {
             val allAlarms = db.alarmDao().getAllOnce()

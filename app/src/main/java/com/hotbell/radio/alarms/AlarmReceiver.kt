@@ -48,8 +48,14 @@ class AlarmReceiver : BroadcastReceiver() {
                     pendingResult.finish()
                     return@launch
                 }
+
+                // Fix #5: Re-schedule repeating alarms (daysOfWeek != 0)
+                if (alarm != null && alarm.daysOfWeek != 0) {
+                    Log.d(TAG, "Repeating alarm $alarmId — rescheduling for next occurrence")
+                    AlarmScheduler(context).schedule(alarm)
+                }
             } catch (e: Exception) {
-                Log.e(TAG, "Error checking skipNext", e)
+                Log.e(TAG, "Error checking skipNext / rescheduling", e)
             }
 
             // Fire the alarm
@@ -96,6 +102,8 @@ class AlarmReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val notificationId = alarmId.hashCode()
+
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle("HotBell Alarm")
@@ -105,6 +113,16 @@ class AlarmReceiver : BroadcastReceiver() {
             .setFullScreenIntent(fullScreenPendingIntent, true)
             .setAutoCancel(true)
 
-        notificationManager.notify(alarmId.hashCode(), notification.build())
+        notificationManager.notify(notificationId, notification.build())
+
+        // Fix #6: Also directly start WakeUpActivity — ensures it launches
+        // even when the screen is already active (fullScreenIntent only shows
+        // a notification in that case on Android 10+).
+        try {
+            context.startActivity(wakeUpIntent)
+            Log.d(TAG, "Directly launched WakeUpActivity for alarm $alarmId")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to directly start WakeUpActivity", e)
+        }
     }
 }
