@@ -59,13 +59,13 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
     private var alarmStationUuid: String? = null
     private var alarmStationName: String? = null
     private var alarmStationUrl: String? = null
-
     private var flashlightJob: Job? = null
-
     private var fallbackTimeoutJob: Job? = null
 
     // Alarm ID for notification cancellation (Fix #3)
     private var alarmId: String = ""
+
+    private var alarmStarted = false
 
     // Photo Match
     private val _dismissType = MutableStateFlow("math")
@@ -95,6 +95,12 @@ class WakeUpViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun startAlarm(context: Context, stationUuid: String?, stationName: String?, stationUrl: String? = null) {
+        if (alarmStarted) {
+            android.util.Log.d("WakeUpViewModel", "Alarm already started, skipping")
+            return
+        }
+        alarmStarted = true
+
         android.util.Log.d("WakeUpViewModel", "startAlarm called with stationUuid=$stationUuid, stationName=$stationName, stationUrl=$stationUrl")
 
         // Save station info for snooze

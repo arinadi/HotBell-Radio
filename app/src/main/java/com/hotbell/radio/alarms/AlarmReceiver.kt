@@ -20,6 +20,10 @@ class AlarmReceiver : BroadcastReceiver() {
         private const val TAG = "AlarmReceiver"
         private const val CHANNEL_ID = "hotbell_alarm_channel"
         private const val CHANNEL_NAME = "HotBell Alarms"
+
+        // simple debounce to avoid multiple triggers in quick succession (Bug fix Phase 7)
+        private val lastTriggerTimes = mutableMapOf<String, Long>()
+        private const val DEBOUNCE_MS = 10000L
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -32,6 +36,14 @@ class AlarmReceiver : BroadcastReceiver() {
         val autoDismissMin = intent.getIntExtra("EXTRA_AUTO_DISMISS", 10)
         val dismissType = intent.getStringExtra("EXTRA_DISMISS_TYPE") ?: "math"
         val targetPhotoPath = intent.getStringExtra("EXTRA_TARGET_PHOTO_PATH")
+
+        val currentTime = System.currentTimeMillis()
+        val lastTime = lastTriggerTimes[alarmId] ?: 0L
+        if (currentTime - lastTime < DEBOUNCE_MS) {
+            Log.d(TAG, "Duplicate alarm trigger for $alarmId within debounce window. Skipping.")
+            return
+        }
+        lastTriggerTimes[alarmId] = currentTime
 
         Log.d(TAG, "Alarm fired via Broadcast! id=$alarmId, station=$stationName")
 
